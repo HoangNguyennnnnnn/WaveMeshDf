@@ -1,8 +1,12 @@
 # WaveMesh-Diff
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)
+
 **3D Mesh Generation using Diffusion Models in Wavelet Domain**
 
 Phát sinh 3D mesh từ multi-view images sử dụng diffusion models trên sparse 3D wavelet coefficients.
+
+> **🚀 Quick Start:** Try our [Google Colab notebook](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb) for instant demo (no installation needed)!
 
 ---
 
@@ -33,13 +37,8 @@ WaveMesh-Diff kết hợp 4 modules chính:
 git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
 cd WaveMeshDf
 
-# Cài dependencies cơ bản
-pip install torch torchvision numpy
-pip install PyWavelets trimesh matplotlib
-
-# Tùy chọn: Cài đầy đủ
-pip install transformers huggingface_hub  # Cho DINOv2
-pip install pyrender                      # Cho rendering
+# Cài dependencies
+pip install -r requirements.txt
 ```
 
 ### 2. Test Installation
@@ -47,35 +46,35 @@ pip install pyrender                      # Cho rendering
 ```bash
 # Test tất cả modules
 python test_all_modules.py
+# Expected: 4/4 modules PASS ✅
 
 # Kỳ vọng: 3/4 hoặc 4/4 modules PASS
 # (Module A cần PyWavelets)
 ```
 
-### 3. Quick Example
+### 3. Download Data & Train
 
-```python
-# Example: Sử dụng các modules
-from data import mesh_to_sdf_simple, sdf_to_sparse_wavelet
-from models import WaveMeshUNet, GaussianDiffusion, MultiViewEncoder
+```bash
+# Download ModelNet40 dataset
+python scripts/download_data.py --dataset modelnet40
 
-# Module A: Mesh → Wavelet
-sdf = mesh_to_sdf_simple(mesh, resolution=32)
-coeffs, coords = sdf_to_sparse_wavelet(sdf)
+# Train model (debug mode - fast)
+python train.py --data_root data/ModelNet40 --debug --max_samples 20
 
-# Module D: Multi-view encoding
-encoder = MultiViewEncoder(feature_dim=768)
-conditioning = encoder(images, camera_poses)
-
-# Module B + C: Diffusion
-unet = WaveMeshUNet(context_dim=768, use_attention=True)
-diffusion = GaussianDiffusion()
-
-# Training
-loss = diffusion(x, context=conditioning)
+# Train full model
+python train.py --data_root data/ModelNet40 --config configs/default.yaml
 ```
 
-**📖 Xem [QUICKSTART.md](QUICKSTART.md) để biết chi tiết.**
+### 4. Generate Meshes
+
+```bash
+python generate.py \
+    --checkpoint outputs/.../best.pth \
+    --num_samples 10 \
+    --output_dir generated_meshes
+```
+
+**📖 Xem [QUICKSTART.md](QUICKSTART.md) và [TRAINING.md](TRAINING.md) để biết chi tiết.**
 
 ---
 
@@ -84,24 +83,28 @@ loss = diffusion(x, context=conditioning)
 ```
 WaveMesh-Diff/
 ├── data/
-│   ├── __init__.py
-│   └── wavelet_utils.py          # Module A: Wavelet transform
+│   ├── wavelet_utils.py          # Module A: Wavelet transform
+│   └── mesh_dataset.py           # Dataset loaders
 ├── models/
-│   ├── __init__.py
 │   ├── unet_sparse.py            # Module B: Sparse U-Net
 │   ├── diffusion.py              # Module C: Diffusion model
 │   ├── multiview_encoder.py      # Module D: Multi-view encoder
-│   └── spconv_compat.py          # Sparse conv compatibility layer
+│   └── spconv_compat.py          # Sparse conv compatibility
+├── utils/
+│   ├── checkpoint.py             # Save/load models
+│   ├── metrics.py                # Evaluation metrics
+│   └── logger.py                 # Training logger
+├── configs/
+│   ├── default.yaml              # Standard config
+│   ├── high_res.yaml             # Production config
+│   └── debug.yaml                # Debug config
 ├── scripts/
 │   ├── download_data.py          # Download datasets
-│   └── render_multiview.py       # Render multi-view images
-├── tests/
-│   ├── test_spconv_compat.py
-│   ├── test_modules_bc.py
-│   └── test_wavelet_pipeline.py
-├── test_all_modules.py           # Comprehensive testing
-├── test_module_d.py              # Module D testing
-├── visualize_results.py          # Visualization script
+│   └── render_multiview.py       # Multi-view rendering
+├── train.py                      # Main training script
+├── generate.py                   # Inference script
+├── test_all_modules.py           # Integration tests
+├── colab_quickstart.ipynb        # Google Colab demo
 ├── requirements.txt
 ├── README.md                     # This file
 ├── QUICKSTART.md                 # Quick start guide

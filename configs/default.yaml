@@ -1,0 +1,52 @@
+# Default training configuration for WaveMesh-Diff
+# ModelNet40 - Small model for quick experiments
+
+# Dataset
+dataset: modelnet40
+data_root: data/ModelNet40
+resolution: 32
+wavelet_threshold: 0.01
+
+# Model Architecture
+unet_channels: [16, 32, 64, 128]
+time_emb_dim: 256
+use_attention: true
+context_dim: 0 # 0 = unconditional, 384 = with multi-view encoder
+
+# Diffusion
+diffusion_steps: 1000
+beta_schedule: linear
+
+# Training
+batch_size: 8
+epochs: 100
+lr: 0.0001
+lr_encoder: 0.00001
+weight_decay: 0.0001
+grad_clip: 1.0
+
+# Optimizer & Scheduler
+optimizer: adamw
+scheduler: cosine
+warmup_epochs: 5
+
+# Checkpointing
+output_dir: outputs
+save_freq: 5 # Save every N epochs
+val_freq: 1 # Validate every N epochs
+
+# Logging
+log_freq: 100 # Log every N steps
+
+# Hardware
+num_workers: 4
+mixed_precision: false
+
+# Advanced (optional)
+use_ema: false
+ema_decay: 0.9999
+cfg_prob: 0.0 # Classifier-free guidance dropout
+
+# Debug
+debug: false
+max_samples: null

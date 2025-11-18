@@ -1,0 +1,50 @@
+# Quick debug configuration
+# For testing training pipeline
+
+# Dataset
+dataset: modelnet40
+data_root: data/ModelNet40
+resolution: 16 # Very small for speed
+wavelet_threshold: 0.05
+
+# Model Architecture
+unet_channels: [8, 16, 32] # Tiny model
+time_emb_dim: 64
+use_attention: false # Faster
+context_dim: 0
+
+# Diffusion
+diffusion_steps: 100 # Few steps
+beta_schedule: linear
+
+# Training
+batch_size: 2
+epochs: 5
+lr: 0.001
+weight_decay: 0.0001
+grad_clip: 1.0
+
+# Optimizer & Scheduler
+optimizer: adamw
+scheduler: none
+warmup_epochs: 0
+
+# Checkpointing
+output_dir: outputs/debug
+save_freq: 1
+val_freq: 1
+
+# Logging
+log_freq: 10
+
+# Hardware
+num_workers: 0 # Single process
+mixed_precision: false
+
+# Advanced
+use_ema: false
+cfg_prob: 0.0
+
+# Debug
+debug: true
+max_samples: 20 # Only 20 samples total

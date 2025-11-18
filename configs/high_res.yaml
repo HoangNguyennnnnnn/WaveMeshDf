@@ -1,0 +1,52 @@
+# High resolution training configuration
+# For production-quality meshes
+
+# Dataset
+dataset: shapenet
+data_root: data/ShapeNet
+resolution: 64 # Higher resolution
+wavelet_threshold: 0.005 # Lower threshold = less sparsity, better quality
+
+# Model Architecture
+unet_channels: [32, 64, 128, 256] # Larger model
+time_emb_dim: 512
+use_attention: true
+context_dim: 768 # Use DINOv2 large
+
+# Diffusion
+diffusion_steps: 1000
+beta_schedule: cosine # Better for generation
+
+# Training
+batch_size: 4 # Smaller due to larger model
+epochs: 200
+lr: 0.0001
+lr_encoder: 0.00001
+weight_decay: 0.0001
+grad_clip: 1.0
+
+# Optimizer & Scheduler
+optimizer: adamw
+scheduler: cosine
+warmup_epochs: 10
+
+# Checkpointing
+output_dir: outputs
+save_freq: 10
+val_freq: 2
+
+# Logging
+log_freq: 50
+
+# Hardware
+num_workers: 8
+mixed_precision: true # Enable for faster training
+
+# Advanced
+use_ema: true # Important for quality
+ema_decay: 0.9999
+cfg_prob: 0.1 # Classifier-free guidance
+
+# Debug
+debug: false
+max_samples: null
