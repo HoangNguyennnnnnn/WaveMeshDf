@@ -46,8 +46,8 @@ def main():
         print_test("Basic Wavelet Transform")
         transform = WaveletTransform3D(
             wavelet='db1',
-            levels=2,
-            threshold=0.01
+            level=2
+        )
         )
         
         # Create dummy SDF
