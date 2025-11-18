@@ -22,13 +22,17 @@ WaveMesh-Diff/
 ├── data/
 │   └── wavelet_utils.py       # Module A: Wavelet transform utilities ✅
 ├── models/
-│   ├── unet_sparse.py         # Module B: Sparse 3D U-Net (TODO)
-│   └── diffusion.py           # Module C: Diffusion model (TODO)
+│   ├── unet_sparse.py         # Module B: Sparse 3D U-Net ✅
+│   └── diffusion.py           # Module C: Diffusion model ✅
 ├── tests/
-│   └── test_wavelet_pipeline.py  # Wavelet pipeline tests ✅
+│   ├── test_wavelet_pipeline.py  # Module A tests ✅
+│   └── test_modules_bc.py        # Modules B & C tests ✅
 ├── utils/
 ├── requirements.txt
-└── README.md
+├── README.md
+├── QUICKSTART.md
+├── COLAB_SETUP.md             # Google Colab instructions
+└── TROUBLESHOOTING.md         # Common issues & solutions
 ```
 
 ## 🚀 Quick Start
