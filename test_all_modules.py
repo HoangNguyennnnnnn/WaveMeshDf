@@ -10,6 +10,7 @@ import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import torch
+import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -46,25 +47,24 @@ def main():
         print_test("Basic Wavelet Transform")
         transform = WaveletTransform3D(
             wavelet='db1',
-            levels=2,
-            threshold=0.01
+            level=2
         )
         
-        # Create dummy SDF
-        sdf = torch.randn(1, 1, 32, 32, 32)
+        # Create dummy SDF (numpy array, not torch)
+        sdf = np.random.randn(32, 32, 32)
         
         # Forward transform
-        coeffs, coords = transform.forward(sdf)
+        sparse_data = transform.dense_to_sparse_wavelet(sdf, threshold=0.01, return_torch=False)
         print(f"  Input SDF shape: {sdf.shape}")
-        print(f"  Sparse coefficients: {coeffs.shape}")
-        print(f"  Active coordinates: {coords.shape}")
+        print(f"  Sparse indices: {sparse_data['indices'].shape}")
+        print(f"  Sparse features: {sparse_data['features'].shape}")
         
         # Inverse transform
-        reconstructed = transform.inverse(coeffs, coords, shape=(1, 1, 32, 32, 32))
+        reconstructed = transform.sparse_to_dense_wavelet(sparse_data, denoise=False)
         print(f"  Reconstructed shape: {reconstructed.shape}")
         
         # MSE
-        mse = torch.mean((sdf - reconstructed) ** 2).item()
+        mse = np.mean((sdf - reconstructed) ** 2)
         print(f"  Reconstruction MSE: {mse:.6f}")
         
         test_results['Module A'] = True
