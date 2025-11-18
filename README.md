@@ -132,20 +132,34 @@ reconstructed_sdf = transformer.sparse_to_dense_wavelet(
 )
 ```
 
-#### End-to-End Pipeline
+#### End-to-End Pipeline (Convenience API)
 
 ```python
-from data.wavelet_utils import mesh_to_sdf_grid, sparse_to_mesh, save_mesh
+import trimesh
+from data import (
+    mesh_to_sdf_simple,
+    sdf_to_sparse_wavelet,
+    sparse_wavelet_to_sdf,
+    sdf_to_mesh,
+    normalize_mesh
+)
 
-# Mesh -> SDF
-sdf_grid = mesh_to_sdf_grid("input.obj", resolution=256)
+# Load and normalize mesh
+mesh = trimesh.load("input.obj")
+mesh = normalize_mesh(mesh)
+
+# Mesh -> SDF (Colab-friendly)
+sdf_grid = mesh_to_sdf_simple(mesh, resolution=64)
 
 # SDF -> Sparse Wavelet
-sparse_data = transformer.dense_to_sparse_wavelet(sdf_grid, threshold=0.01)
+sparse_data = sdf_to_sparse_wavelet(sdf_grid, threshold=0.01)
 
-# Sparse Wavelet -> Mesh
-vertices, faces = sparse_to_mesh(sparse_data, level=0.0)
-save_mesh(vertices, faces, "output.obj")
+# Sparse Wavelet -> SDF
+reconstructed_sdf = sparse_wavelet_to_sdf(sparse_data)
+
+# SDF -> Mesh
+vertices, faces = sdf_to_mesh(reconstructed_sdf)
+trimesh.Trimesh(vertices=vertices, faces=faces).export("output.obj")
 ```
 
 ### Sparse Data Format

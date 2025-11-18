@@ -73,14 +73,14 @@
 ```
 INPUT: 3D Mesh (.obj, .ply, etc.)
    │
-   │ mesh_to_sdf_grid()
+   │ mesh_to_sdf_simple()  ◄── Convenience function (Colab-friendly)
    ▼
 ┌─────────────────────────┐
 │   Dense SDF Grid        │  ◄── 256³ = 16M voxels
 │   (256 × 256 × 256)     │      ~64 MB memory
 └─────────────────────────┘
    │
-   │ dense_to_sparse_wavelet()
+   │ sdf_to_sparse_wavelet()  ◄── Convenience function
    │ - 3D DWT (level 3)
    │ - Threshold small coeffs
    ▼

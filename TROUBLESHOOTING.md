@@ -235,7 +235,10 @@ vertices, faces = sdf_to_mesh(sdf_grid, level=0.0)
 3. **Increase resolution:**
 
 ```python
-sdf_grid = mesh_to_sdf_grid(mesh_path, resolution=256)
+# Using convenience function
+mesh = trimesh.load("mesh.obj")
+mesh = normalize_mesh(mesh)
+sdf_grid = mesh_to_sdf_simple(mesh, resolution=256)
 ```
 
 ---
