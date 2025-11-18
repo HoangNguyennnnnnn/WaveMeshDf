@@ -7,6 +7,12 @@
 Phát sinh 3D mesh từ multi-view images sử dụng diffusion models trên sparse 3D wavelet coefficients.
 
 > **🚀 Quick Start:** Try our [Google Colab notebook](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb) for instant demo (no installation needed)!
+>
+> **⚡ Performance Tip:** Enable GPU in Colab (Runtime → Change runtime type → T4 GPU) for 10-50x faster execution!
+>
+> **💾 Memory Note:** Notebook auto-detects your RAM and uses safe resolution (32³ for free tier, 64³ for Pro)
+>
+> **📖 Colab Help:** See [COLAB_SETUP.md](COLAB_SETUP.md) for GPU setup, memory optimization, and troubleshooting
 
 ---
 
@@ -37,14 +43,14 @@ WaveMesh-Diff kết hợp 4 modules chính:
 git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
 cd WaveMeshDf
 
-# Cài core dependencies
+# Cài dependencies
 pip install -r requirements.txt
 
-# Cài optional dependencies (recommended cho DINOv2)
-python install_optional.py
+# Optional: Install transformers for DINOv2 (better quality)
+pip install transformers huggingface_hub
 ```
 
-**📖 Xem [INSTALLATION.md](INSTALLATION.md) để biết chi tiết về troubleshooting.**
+**📖 Xem [QUICKSTART.md](QUICKSTART.md) hoặc [TROUBLESHOOTING.md](TROUBLESHOOTING.md) nếu gặp vấn đề.**
 
 ### 2. Test Installation
 
@@ -52,9 +58,6 @@ python install_optional.py
 # Test tất cả modules
 python test_all_modules.py
 # Expected: 4/4 modules PASS ✅
-
-# Verify complete setup
-python verify_complete_setup.py
 ```
 
 ### 3. Download Data & Train
@@ -354,7 +357,16 @@ python train.py --batch_size 2 --resolution 16
 - [ ] Progressive training
 - [ ] Web demo
 
-**📖 Xem [ROADMAP.md](ROADMAP.md) để biết chi tiết.**
+---
+
+## 📚 Documentation
+
+- 🚀 **[QUICKSTART.md](QUICKSTART.md)** - Setup & quick demos (30 minutes)
+- ⚡ **[COLAB_SETUP.md](COLAB_SETUP.md)** - Google Colab setup & GPU optimization
+- 🏋️ **[TRAINING.md](TRAINING.md)** - Complete training guide
+- 🐛 **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Debug & fix errors
+- 🏗️ **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architecture & pipeline details
+- 📖 **[DOCS_GUIDE.md](DOCS_GUIDE.md)** - Which doc to read? (start here!)
 
 ---
 
