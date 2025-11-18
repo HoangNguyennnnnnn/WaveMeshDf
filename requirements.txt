@@ -1,0 +1,39 @@
+# WaveMesh-Diff Requirements
+# Core Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Numerical & Scientific Computing
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Wavelet Transform (Module A - Critical)
+PyWavelets>=1.4.1
+
+# 3D Mesh Processing (Module A)
+mesh-to-sdf>=0.0.14        # Mesh to SDF conversion
+trimesh>=3.23.0            # Mesh I/O and processing
+scikit-image>=0.21.0       # Marching Cubes algorithm
+
+# Sparse 3D Convolution (Module B - for U-Net)
+# Note: Install appropriate version for your CUDA version
+# For CUDA 11.8: spconv-cu118
+# For CUDA 12.1: spconv-cu121
+spconv-cu118               # Replace with your CUDA version
+
+# Image Feature Extraction (Module C)
+transformers>=4.30.0       # DINOv2 encoder
+pillow>=9.5.0              # Image loading
+
+# Utilities
+pyyaml>=6.0                # Configuration files
+tqdm>=4.65.0               # Progress bars
+einops>=0.6.1              # Tensor operations
+
+# Training & Logging (Optional)
+wandb>=0.15.0              # Experiment tracking (optional)
+tensorboard>=2.13.0        # Tensorboard logging (optional)
+
+# Development & Testing
+pytest>=7.3.0              # Unit testing
+matplotlib>=3.7.0          # Visualization
