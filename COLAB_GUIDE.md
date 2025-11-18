@@ -6,6 +6,40 @@ This guide will help you run the complete WaveMesh-Diff pipeline on Google Colab
 
 ## 📋 Quick Start (Copy-Paste Ready)
 
+### Step 0: Setup GitHub Access (For Private Repositories)
+
+**If the repository is private**, you need to set up authentication:
+
+1. **Create a GitHub Personal Access Token:**
+
+   - Go to https://github.com/settings/tokens
+   - Click "Generate new token" → "Generate new token (classic)"
+   - Give it a name (e.g., "Colab Access")
+   - Check the `repo` scope (full control of private repositories)
+   - Click "Generate token" and **copy the token**
+
+2. **Add token to Colab Secrets:**
+
+   - In your Colab notebook, click the 🔑 **Key icon** in the left sidebar
+   - Click "Add a secret"
+   - Name: `GH_TOKEN`
+   - Value: Paste your GitHub token
+   - Toggle "Notebook access" ON
+
+3. **Verify the secret is set:**
+   ```python
+   from google.colab import userdata
+   try:
+       token = userdata.get('GH_TOKEN')
+       print("✅ GitHub token found!")
+   except:
+       print("❌ GitHub token not found. Please add GH_TOKEN to secrets.")
+   ```
+
+**For public repositories**, you can skip this step.
+
+---
+
 ### Step 1: Setup Environment
 
 Copy this entire cell into a new Colab notebook:
@@ -17,32 +51,111 @@ Copy this entire cell into a new Colab notebook:
 
 # 1. Configure for headless rendering
 import os
+import subprocess
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
 # 2. Install core dependencies
+print("📦 Installing core dependencies...")
 !pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision
 
-# 3. Install spconv (for GPU - match your Colab CUDA version)
-# Check CUDA version first
-!nvcc --version
+# 3. Detect CUDA version and install matching spconv
+print("\n🔍 Detecting CUDA version...")
+try:
+    cuda_version = subprocess.check_output(['nvcc', '--version']).decode('utf-8')
+    print(cuda_version)
 
-# Install spconv for CUDA 11.8 (most common on Colab as of Nov 2024)
-!pip install -q spconv-cu118
+    # Parse CUDA version
+    if 'release 12.5' in cuda_version or 'release 12.' in cuda_version:
+        print("📥 Installing spconv for CUDA 12.x...")
+        !pip install -q spconv-cu120
+    elif 'release 11.8' in cuda_version:
+        print("📥 Installing spconv for CUDA 11.8...")
+        !pip install -q spconv-cu118
+    else:
+        print("⚠️  Unknown CUDA version, trying spconv-cu118...")
+        !pip install -q spconv-cu118
+except:
+    print("⚠️  Could not detect CUDA, installing spconv-cu118 as default...")
+    !pip install -q spconv-cu118
 
-# Alternative: if you have CUDA 12.1
-# !pip install -q spconv-cu121
-
-# 4. Install additional utilities (optional but recommended)
+# 4. Install additional utilities
+print("\n📦 Installing additional utilities...")
 !pip install -q tqdm pyyaml einops
 
-# 5. Clone the repository
-!git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
-%cd WaveMeshDf
+# 5. Clone the repository with authentication
+print("\n📥 Cloning WaveMesh-Diff repository...")
+
+try:
+    # Try to get GitHub token from secrets (for private repos)
+    from google.colab import userdata
+    gh_token = userdata.get('GH_TOKEN')
+
+    # Clone with authentication
+    repo_url = f"https://{gh_token}@github.com/HoangNguyennnnnnn/WaveMeshDf.git"
+    !git clone {repo_url} WaveMeshDf
+    print("✅ Cloned private repository successfully!")
+except:
+    # Fall back to public clone (will fail if repo is private)
+    print("ℹ️  No GH_TOKEN found in secrets, trying public clone...")
+    !git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git WaveMeshDf
+
+# Change to repository directory
+import os
+if os.path.exists('WaveMeshDf'):
+    %cd WaveMeshDf
+    print("✅ Changed to WaveMeshDf directory")
+else:
+    print("❌ Failed to clone repository. Check:")
+    print("   1. Repository URL is correct")
+    print("   2. Repository is public OR you've added GH_TOKEN to secrets")
+    print("   3. GH_TOKEN has 'repo' permissions")
+    raise FileNotFoundError("Repository not cloned")
 
 # 6. Verify installation
-!python verify_installation.py
+print("\n🔍 Verifying installation...")
+if os.path.exists('verify_installation.py'):
+    !python verify_installation.py
+else:
+    print("⚠️  verify_installation.py not found, running basic checks...")
 
-print("\n✅ Setup complete! Ready to run WaveMesh-Diff")
+    # Basic verification
+    import sys
+    errors = []
+
+    try:
+        import pywt
+        print("✓ PyWavelets imported successfully")
+    except ImportError as e:
+        errors.append(f"PyWavelets: {e}")
+
+    try:
+        import trimesh
+        print("✓ trimesh imported successfully")
+    except ImportError as e:
+        errors.append(f"trimesh: {e}")
+
+    try:
+        import torch
+        print(f"✓ PyTorch {torch.__version__} (CUDA: {torch.cuda.is_available()})")
+    except ImportError as e:
+        errors.append(f"PyTorch: {e}")
+
+    try:
+        import spconv.pytorch as spconv
+        print(f"✓ spconv imported successfully")
+    except ImportError as e:
+        errors.append(f"spconv: {e}")
+
+    if errors:
+        print("\n❌ Import errors:")
+        for err in errors:
+            print(f"  - {err}")
+    else:
+        print("\n✅ All core dependencies verified!")
+
+print("\n" + "="*60)
+print("✅ Setup complete! Ready to run WaveMesh-Diff")
+print("="*60)
 ```
 
 ---
@@ -378,18 +491,51 @@ for res in resolutions:
 
 ## 🐛 Troubleshooting
 
-### Issue 1: CUDA/spconv errors
+### Issue 1: GitHub Authentication Error
+
+**Error:** `fatal: could not read Username for 'https://github.com': No such device or address`
+
+**Solution:**
+
+```python
+# Step 1: Create GitHub Personal Access Token
+# Go to: https://github.com/settings/tokens
+# Create token with 'repo' scope
+
+# Step 2: Add to Colab Secrets
+# Click 🔑 Key icon in left sidebar → Add secret
+# Name: GH_TOKEN
+# Value: <your token>
+# Enable "Notebook access"
+
+# Step 3: Clone with token
+from google.colab import userdata
+gh_token = userdata.get('GH_TOKEN')
+!git clone https://{gh_token}@github.com/HoangNguyennnnnnn/WaveMeshDf.git
+%cd WaveMeshDf
+```
+
+**Alternative - Make Repository Public:**
+If you don't need the repository to be private:
+
+1. Go to repository Settings → Danger Zone → Change visibility → Make public
+
+### Issue 2: CUDA/spconv version mismatch
 
 ```python
 # Check CUDA version
 !nvcc --version
 
-# Reinstall matching spconv
-!pip uninstall -y spconv-cu118
-!pip install spconv-cu118  # or spconv-cu121 for CUDA 12.1
+# For CUDA 12.5 (current Colab default as of Nov 2024)
+!pip uninstall -y spconv-cu118 spconv-cu120
+!pip install spconv-cu120
+
+# For CUDA 11.8
+!pip uninstall -y spconv-cu118 spconv-cu120
+!pip install spconv-cu118
 ```
 
-### Issue 2: Out of Memory
+### Issue 3: Out of Memory
 
 ```python
 # Use smaller resolution
@@ -400,7 +546,7 @@ import torch
 torch.cuda.empty_cache()
 ```
 
-### Issue 3: Import errors
+### Issue 4: Import errors
 
 ```python
 # Reinstall dependencies
@@ -410,7 +556,41 @@ torch.cuda.empty_cache()
 !python -c "import pywt; import trimesh; print('✓ Imports OK')"
 ```
 
-### Issue 4: Display/OpenGL errors
+### Issue 5: verify_installation.py not found
+
+**Error:** `python3: can't open file '/content/verify_installation.py': [Errno 2] No such file or directory`
+
+**This happens when:**
+
+- Repository wasn't cloned successfully
+- You're not in the WaveMeshDf directory
+
+**Solution:**
+
+```python
+import os
+
+# Check if we're in the right directory
+print(f"Current directory: {os.getcwd()}")
+print(f"Directory contents: {os.listdir('.')}")
+
+# If WaveMeshDf exists but you're not in it
+if 'WaveMeshDf' in os.listdir('.'):
+    %cd WaveMeshDf
+    print("✓ Moved to WaveMeshDf directory")
+
+# If repository wasn't cloned, clone it again
+if not os.path.exists('WaveMeshDf'):
+    from google.colab import userdata
+    try:
+        gh_token = userdata.get('GH_TOKEN')
+        !git clone https://{gh_token}@github.com/HoangNguyennnnnnn/WaveMeshDf.git
+    except:
+        !git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
+    %cd WaveMeshDf
+```
+
+### Issue 6: Display/OpenGL errors
 
 ```python
 # This is normal in Colab - the code handles it automatically
@@ -428,18 +608,63 @@ Here's a complete notebook you can copy:
 
 ```python
 # =============================================================================
-# CELL 1: Setup
+# CELL 0: Check GitHub Token (For Private Repos Only)
+# =============================================================================
+
+from google.colab import userdata
+try:
+    token = userdata.get('GH_TOKEN')
+    print("✅ GitHub token found! Ready to clone private repository.")
+except:
+    print("⚠️ No GH_TOKEN found.")
+    print("If repository is private, add GH_TOKEN to secrets (🔑 icon in sidebar)")
+    print("If repository is public, you can proceed without it.")
+
+# =============================================================================
+# CELL 1: Setup Environment
 # =============================================================================
 
 import os
+import subprocess
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
-!pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision spconv-cu118 tqdm
+print("📦 Installing dependencies...")
+!pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision tqdm pyyaml einops
 
-!git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
+# Auto-detect CUDA version and install matching spconv
+print("\n🔍 Detecting CUDA version...")
+try:
+    cuda_version = subprocess.check_output(['nvcc', '--version']).decode('utf-8')
+    if 'release 12.' in cuda_version:
+        !pip install -q spconv-cu120
+    else:
+        !pip install -q spconv-cu118
+except:
+    !pip install -q spconv-cu118
+
+# Clone repository with authentication
+print("\n📥 Cloning repository...")
+try:
+    from google.colab import userdata
+    gh_token = userdata.get('GH_TOKEN')
+    !git clone https://{gh_token}@github.com/HoangNguyennnnnnn/WaveMeshDf.git
+except:
+    !git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
+
 %cd WaveMeshDf
 
-!python verify_installation.py
+# Verify
+print("\n🔍 Verifying installation...")
+if os.path.exists('verify_installation.py'):
+    !python verify_installation.py
+else:
+    import pywt, trimesh, torch
+    import spconv.pytorch as spconv
+    print("✅ All core dependencies verified!")
+
+print("\n" + "="*60)
+print("✅ Setup complete! Ready to run WaveMesh-Diff")
+print("="*60)
 
 # =============================================================================
 # CELL 2: Test Module A (Wavelet Transform)
