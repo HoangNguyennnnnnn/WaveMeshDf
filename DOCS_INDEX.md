@@ -10,13 +10,19 @@
    - All modules in one script
    - Common use cases and examples
 
-2. **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Setup instructions
+2. **[VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md)** 🎨 **Visualize results**
+
+   - All visualization types explained
+   - Colab and Local examples
+   - Custom visualization code
+
+3. **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Setup instructions
 
    - Google Colab setup (instant, no installation)
    - Local machine setup (full performance)
    - Detailed installation steps
 
-3. **[README.md](README.md)** - Project overview
+4. **[README.md](README.md)** - Project overview
    - Quick start
    - Architecture overview
 
@@ -27,6 +33,7 @@
 ### Core Documentation
 
 - **[PIPELINE_GUIDE.md](PIPELINE_GUIDE.md)** - Complete pipeline usage
+- **[VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md)** - Result visualization
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Installation and setup
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Problem solving
@@ -47,6 +54,7 @@
 ### I want to...
 
 - **Run the complete pipeline** → [PIPELINE_GUIDE.md](PIPELINE_GUIDE.md)
+- **Visualize my results** → [VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md)
 - **Run in Google Colab** → [PIPELINE_GUIDE.md](PIPELINE_GUIDE.md) or [SETUP_GUIDE.md#google-colab-setup](SETUP_GUIDE.md#google-colab-setup)
 - **Setup locally with GPU** → [SETUP_GUIDE.md#local-machine-setup](SETUP_GUIDE.md#local-machine-setup)
 - **Understand the architecture** → [ARCHITECTURE.md](ARCHITECTURE.md)

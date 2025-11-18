@@ -23,6 +23,7 @@ python run_pipeline.py
 **📖 Guides:**
 
 - **[PIPELINE_GUIDE.md](PIPELINE_GUIDE.md)** - Complete pipeline usage (Colab & Local)
+- **[VISUALIZATION_GUIDE.md](VISUALIZATION_GUIDE.md)** - Visualize results & outputs
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup instructions
 - **[DOCS_INDEX.md](DOCS_INDEX.md)** - All documentation
 
