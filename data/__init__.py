@@ -9,7 +9,11 @@ from .wavelet_utils import (
     sdf_to_mesh,
     sparse_to_mesh,
     save_mesh,
-    compute_sparsity
+    compute_sparsity,
+    mesh_to_sdf_simple,
+    sdf_to_sparse_wavelet,
+    sparse_wavelet_to_sdf,
+    normalize_mesh
 )
 
 __all__ = [
@@ -18,5 +22,9 @@ __all__ = [
     'sdf_to_mesh',
     'sparse_to_mesh',
     'save_mesh',
-    'compute_sparsity'
+    'compute_sparsity',
+    'mesh_to_sdf_simple',
+    'sdf_to_sparse_wavelet',
+    'sparse_wavelet_to_sdf',
+    'normalize_mesh'
 ]

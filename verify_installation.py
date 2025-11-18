@@ -100,11 +100,16 @@ def main():
             sdf_to_mesh,
             sparse_to_mesh,
             save_mesh,
-            compute_sparsity
+            compute_sparsity,
+            mesh_to_sdf_simple,
+            sdf_to_sparse_wavelet,
+            sparse_wavelet_to_sdf,
+            normalize_mesh
         )
         print("✅ data module          All functions available")
-        print(f"   - mesh_to_sdf_grid, sdf_to_mesh, sparse_to_mesh")
-        print(f"   - save_mesh, compute_sparsity")
+        print(f"   - mesh_to_sdf_grid, mesh_to_sdf_simple, sdf_to_mesh")
+        print(f"   - sdf_to_sparse_wavelet, sparse_wavelet_to_sdf")
+        print(f"   - save_mesh, compute_sparsity, normalize_mesh")
     except ImportError as e:
         print(f"❌ data module          Import failed: {e}")
         all_ok = False

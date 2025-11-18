@@ -12,9 +12,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
 import numpy as np
-from models import WaveMeshUNet, GaussianDiffusion, create_sparse_tensor_from_wavelet
+from models import (
+    WaveMeshUNet, 
+    GaussianDiffusion, 
+    create_sparse_tensor_from_wavelet,
+    SparseConvTensor,
+    get_backend_info
+)
 from data import WaveletTransform3D
-import spconv.pytorch as spconv
 
 
 def test_sparse_unet():
@@ -61,7 +66,7 @@ def test_sparse_unet():
     features = torch.randn(num_points, 1).to(device)
     
     # Create sparse tensor
-    x = spconv.SparseConvTensor(
+    x = SparseConvTensor(
         features=features,
         indices=indices,
         spatial_shape=spatial_shape,
@@ -148,7 +153,7 @@ def test_diffusion_model(model, device):
     batch_indices = torch.randint(0, batch_size, (num_points, 1))
     indices = torch.cat([batch_indices, indices], dim=1).int().to(device)
     
-    x_sparse = spconv.SparseConvTensor(
+    x_sparse = SparseConvTensor(
         features=x_start,
         indices=indices,
         spatial_shape=[64, 64, 64],
@@ -207,7 +212,7 @@ def test_integration_with_wavelet():
     indices_batched = torch.cat([batch_indices, spatial_indices], dim=1)
     
     # Create sparse tensor
-    x_sparse = spconv.SparseConvTensor(
+    x_sparse = SparseConvTensor(
         features=features,
         indices=indices_batched.int(),
         spatial_shape=list(sdf_grid.shape),
