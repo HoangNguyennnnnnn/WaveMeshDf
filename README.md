@@ -4,15 +4,27 @@
 
 A novel approach to 3D mesh generation using diffusion models in the sparse 3D wavelet frequency domain.
 
-## 🚀 Quick Setup
+## 🚀 Quick Start
 
-**Choose your environment:**
+### Run the Complete Pipeline
 
-- 📖 **[Complete Setup Guide](SETUP_GUIDE.md)** - Google Colab AND Local setup in one place
-- ⚡ **Google Colab**: All modules work instantly, no installation needed
-- 💻 **Local Machine**: Full performance with GPU support
+```bash
+# Clone repository
+git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
+cd WaveMeshDf
 
-**All three modules (A, B, C) work in both environments!**
+# Install dependencies
+pip install -r requirements.txt
+
+# Run complete pipeline
+python run_pipeline.py
+```
+
+**📖 Guides:**
+
+- **[PIPELINE_GUIDE.md](PIPELINE_GUIDE.md)** - Complete pipeline usage (Colab & Local)
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup instructions
+- **[DOCS_INDEX.md](DOCS_INDEX.md)** - All documentation
 
 ## 🎯 Project Overview
 
@@ -44,27 +56,25 @@ WaveMesh-Diff/
 └── TROUBLESHOOTING.md         # Common issues & solutions
 ```
 
-## 🚀 Quick Start
+## 📊 What the Pipeline Does
 
-See **[SETUP_GUIDE.md](SETUP_GUIDE.md)** for complete instructions for both Google Colab and Local setup.
+### Complete Workflow
 
-### Quick Test (Any Environment)
+1. **Module A: Wavelet Transform**
 
-```bash
-# Clone repository
-git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
-cd WaveMeshDf
+   - Mesh → SDF → Sparse Wavelet → Reconstructed Mesh
+   - Achieves 50-500x compression with minimal loss
 
-# Install dependencies
-pip install -r requirements.txt
+2. **Module B: Sparse 3D U-Net**
 
-# Run test
-python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 128
-```
+   - Denoising network for wavelet coefficients
+   - Works with both spconv (fast) and dense fallback (Colab)
 
-**For detailed setup instructions, see [SETUP_GUIDE.md](SETUP_GUIDE.md)**
+3. **Module C: Diffusion Model**
+   - Gaussian diffusion for generative modeling
+   - Trained on sparse wavelet representations
 
-### Module A: Wavelet Pipeline
+### Quick Examples
 
 ```bash
 # Create a simple test mesh and run the pipeline
