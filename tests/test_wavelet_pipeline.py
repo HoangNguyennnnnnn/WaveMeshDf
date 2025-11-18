@@ -1,6 +1,10 @@
 """
 Test script for WaveMesh-Diff Wavelet Pipeline
 Verifies mesh -> sparse wavelet -> mesh reconstruction quality
+
+Note: For headless environments (Colab, servers without display):
+    The script will automatically use a simple SDF computation method
+    if the scan-based method fails.
 """
 
 import numpy as np
@@ -8,6 +12,10 @@ import trimesh
 import sys
 import os
 from pathlib import Path
+
+# Configure for headless rendering if needed
+if 'PYOPENGL_PLATFORM' not in os.environ:
+    os.environ['PYOPENGL_PLATFORM'] = 'egl'  # or 'osmesa'
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

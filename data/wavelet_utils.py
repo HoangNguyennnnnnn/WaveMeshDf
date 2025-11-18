@@ -229,7 +229,8 @@ class WaveletTransform3D:
 def mesh_to_sdf_grid(
     mesh_path: str,
     resolution: int = 256,
-    padding: float = 0.1
+    padding: float = 0.1,
+    method: str = 'auto'
 ) -> np.ndarray:
     """
     Convert mesh to dense SDF grid.
@@ -238,12 +239,15 @@ def mesh_to_sdf_grid(
         mesh_path: Path to mesh file (.obj, .ply, etc.)
         resolution: Grid resolution (creates resolution^3 grid)
         padding: Padding around mesh as fraction of bounding box
+        method: SDF computation method - 'auto', 'scan', or 'simple'
+                'auto': Try scan method, fall back to simple if headless
+                'scan': Use mesh_to_sdf with scanning (requires display)
+                'simple': Use simple distance-based method (works headless)
         
     Returns:
         Dense SDF grid of shape (resolution, resolution, resolution)
     """
     import trimesh
-    from mesh_to_sdf import mesh_to_sdf
     
     # Load mesh
     mesh = trimesh.load(mesh_path, force='mesh')
@@ -264,11 +268,73 @@ def mesh_to_sdf_grid(
     xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
     query_points = np.stack([xx, yy, zz], axis=-1).reshape(-1, 3)
     
-    # Compute SDF
-    sdf_values = mesh_to_sdf(mesh, query_points, sign_method='normal')
+    # Compute SDF based on method
+    if method == 'auto':
+        try:
+            # Try using mesh_to_sdf with scan method
+            from mesh_to_sdf import mesh_to_sdf
+            sdf_values = mesh_to_sdf(mesh, query_points, sign_method='normal')
+        except Exception as e:
+            # Fall back to simple method if scan fails (e.g., headless environment)
+            print(f"  ⚠ mesh_to_sdf failed ({type(e).__name__}), using simple method...")
+            sdf_values = _compute_sdf_simple(mesh, query_points)
+    elif method == 'scan':
+        from mesh_to_sdf import mesh_to_sdf
+        sdf_values = mesh_to_sdf(mesh, query_points, sign_method='normal')
+    elif method == 'simple':
+        sdf_values = _compute_sdf_simple(mesh, query_points)
+    else:
+        raise ValueError(f"Unknown method: {method}. Use 'auto', 'scan', or 'simple'")
+    
     sdf_grid = sdf_values.reshape(resolution, resolution, resolution)
     
     return sdf_grid
+
+
+def _compute_sdf_simple(mesh, query_points: np.ndarray) -> np.ndarray:
+    """
+    Simple SDF computation using closest point on mesh surface.
+    Works in headless environments. Less accurate than scan-based methods
+    but sufficient for wavelet testing.
+    
+    Args:
+        mesh: Trimesh object
+        query_points: (N, 3) array of query points
+        
+    Returns:
+        (N,) array of signed distances
+    """
+    import trimesh
+    
+    # Compute closest points on mesh surface
+    closest_points, distances, triangle_id = mesh.nearest.on_surface(query_points)
+    
+    # Determine sign using ray casting (inside/outside test)
+    # Count intersections along random rays - odd = inside, even = outside
+    ray_directions = np.array([[1.0, 0.0, 0.0]])  # Use single direction for speed
+    
+    # Simple inside/outside test using winding number approximation
+    # For a closed mesh, compute if point is inside using dot product with normals
+    normals = mesh.face_normals[triangle_id]
+    vectors_to_query = query_points - closest_points
+    
+    # If the vector from surface to query point is in the same direction as normal, it's outside
+    dots = np.sum(vectors_to_query * normals, axis=1)
+    signs = np.where(dots > 0, 1.0, -1.0)
+    
+    # For more robust inside/outside, use ray intersection count
+    # But for simplicity and speed, the above approximation works for convex shapes
+    try:
+        # More robust method using contains check
+        inside = mesh.contains(query_points)
+        signs = np.where(inside, -1.0, 1.0)
+    except:
+        # Fall back to normal-based approximation
+        pass
+    
+    sdf_values = signs * distances
+    
+    return sdf_values
 
 
 def sdf_to_mesh(

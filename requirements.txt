@@ -11,9 +11,11 @@ scipy>=1.10.0
 PyWavelets>=1.4.1
 
 # 3D Mesh Processing (Module A)
-mesh-to-sdf>=0.0.14        # Mesh to SDF conversion
-trimesh>=3.23.0            # Mesh I/O and processing
-scikit-image>=0.21.0       # Marching Cubes algorithm
+# Note: mesh-to-sdf is optional - fallback method available for headless environments
+mesh-to-sdf>=0.0.14        # Mesh to SDF conversion (optional, requires display/OpenGL)
+trimesh>=3.23.0            # Mesh I/O and processing (required)
+scikit-image>=0.21.0       # Marching Cubes algorithm (required)
+rtree>=1.0.0               # Spatial indexing for trimesh (recommended)
 
 # Sparse 3D Convolution (Module B - for U-Net)
 # Note: Install appropriate version for your CUDA version

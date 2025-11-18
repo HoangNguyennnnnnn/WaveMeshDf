@@ -47,6 +47,9 @@ pip install -r requirements.txt
 # CUDA 12.1: pip install spconv-cu121
 ```
 
+**For Google Colab / Headless Environments:**
+See [COLAB_SETUP.md](COLAB_SETUP.md) for specific instructions. The pipeline automatically uses a headless-compatible SDF method when display is not available.
+
 ### 2. Test Module A: Wavelet Pipeline
 
 ```bash
@@ -59,6 +62,8 @@ python tests/test_wavelet_pipeline.py --mesh path/to/your/mesh.obj --resolution 
 # Test different sparsification thresholds
 python tests/test_wavelet_pipeline.py --mesh path/to/mesh.obj --test-thresholds
 ```
+
+**Note**: In headless environments (Colab, remote servers), the script automatically uses a simple but fast SDF computation method that doesn't require OpenGL/display.
 
 **Expected Output:**
 
