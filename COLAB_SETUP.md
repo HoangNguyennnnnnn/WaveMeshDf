@@ -3,16 +3,8 @@
 ## Quick Setup (Copy this cell to your Colab notebook)
 
 ```python
-# Install dependencies
-!pip install -q PyWavelets trimesh scikit-image scipy numpy torch
-
-# For headless rendering (optional - enables high-quality SDF)
-# Uncomment if you want to try scan-based SDF computation
-# !apt-get install -y xvfb
-# !pip install -q pyvirtualdisplay
-# from pyvirtualdisplay import Display
-# display = Display(visible=0, size=(1024, 768))
-# display.start()
+# Install dependencies for Module A (Wavelet Transform)
+!pip install -q PyWavelets trimesh scikit-image scipy numpy torch rtree
 
 # Configure for headless environment
 import os
@@ -22,8 +14,11 @@ os.environ['PYOPENGL_PLATFORM'] = 'egl'
 !git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
 %cd WaveMeshDf
 
-# Run test
+# Run Module A test (Wavelet Transform)
 !python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 64
+
+# Note: spconv (required for Modules B & C) has compilation issues in Colab
+# Module A works perfectly without it! For neural networks, use local setup.
 ```
 
 ## What to Expect
@@ -173,8 +168,30 @@ Once Module A tests pass:
 
 - ✅ Understand the sparse wavelet representation
 - ✅ Experiment with different thresholds
-- ➡️ Ready for Module B: Sparse 3D U-Net (coming soon)
+- ✅ Test with your own meshes
+- ➡️ For Modules B & C (Neural Networks): Use local GPU setup
+  - spconv has compilation issues in Colab
+  - See README.md for local installation
+  - Or wait for Docker container (coming soon)
 
 ---
 
-_Note: This notebook is for testing Module A (Wavelet Utilities). Full training pipeline requires GPU and will be available when Modules B, C, and D are complete._
+## ⚠️ Important Note About Modules B & C
+
+**Module A (Wavelet Transform)** works perfectly in Google Colab! ✅
+
+**Modules B & C (Neural Networks)** require `spconv`, which has compilation issues in Colab:
+
+- Missing tensorview headers in cumm package
+- Ninja build failures even with proper dependencies
+- **Recommendation**: Use local GPU setup for neural network modules
+
+**Options for Modules B & C:**
+
+1. **Local GPU setup** (NVIDIA GPU + CUDA) - see README.md
+2. **Pre-built Docker container** (coming soon)
+3. **Remote GPU instances** (Paperspace, Lambda Labs, etc.)
+
+---
+
+_This Colab notebook is optimized for Module A (Wavelet Utilities). Enjoy the wavelet transform pipeline! 🎨✨_

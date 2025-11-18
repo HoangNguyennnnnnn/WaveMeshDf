@@ -1,13 +1,36 @@
-# 🚀 Google Colab Complete Setup Guide for WaveMesh-Diff
+# 🚀 Google Colab Setup Guide for WaveMesh-Diff
 
-This guide will help you run the complete WaveMesh-Diff pipeline on Google Colab, including all modules (A, B, C).
+This guide will help you run **Module A (Wavelet Transform)** on Google Colab.
 
-**⚡ Quick Fix for Common Issues:**
+## ⚠️ Important: Colab Limitations
 
-- **spconv compilation errors?** → Use `--no-build-isolation` flag (already in setup below)
-- **rtree missing?** → Install with `pip install rtree` (already included below)
+**What Works in Colab:**
+
+- ✅ **Module A: Wavelet Transform** - Full functionality, no issues!
+- ✅ Mesh to sparse wavelet conversion
+- ✅ Quality evaluation and visualization
+- ✅ All wavelet pipeline tests
+
+**What Doesn't Work in Colab:**
+
+- ❌ **Modules B & C: Neural Networks** - spconv has compilation errors
+  - Missing tensorview headers in cumm package
+  - Ninja build fails even with cumm-cu118 installed
+  - Recommended: Use local GPU setup or Docker container for neural networks
+
+**For Neural Network Modules (B & C):**
+
+- Use local setup with GPU (see README.md)
+- Wait for pre-built Docker container (coming soon)
+- Or use remote GPU instance (Paperspace, Lambda Labs, etc.)
+
+---
+
+**⚡ Common Issues (Module A):**
+
+- **rtree missing?** → Install with `pip install rtree` (included in setup below)
 - **Private repo clone fails?** → Add `GH_TOKEN` to Colab secrets (see Step 0)
-- **CUDA 12.5 compatibility?** → Use `spconv-cu118` (forward compatible, included below)
+- **Negative sparsity?** → Normal for tiny grids (32³), use resolution ≥64
 
 ---
 
@@ -779,37 +802,22 @@ print("="*60)
 !python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 128
 
 # =============================================================================
-# CELL 3: Fix spconv (if needed for Modules B & C)
+# CELL 3: (OPTIONAL) Test Modules B & C - Neural Networks
 # =============================================================================
 
-# Only run this cell if you see spconv errors when testing neural networks
-# Skip this if Module A tests worked fine and you don't need neural networks yet
+# ⚠️ WARNING: spconv has compilation issues in Colab (tensorview headers missing)
+# Module A (Wavelet Transform) works great in Colab!
+# For Modules B & C (Sparse U-Net, Diffusion), recommend local setup:
+#
+# Option 1: Local GPU setup (see README.md)
+# Option 2: Docker container (coming soon)
+# Option 3: Skip neural network modules for now
 
-try:
-    import spconv.pytorch as spconv
-    print("✅ spconv already working!")
-except Exception as e:
-    print(f"⚠️ spconv issue detected: {e}")
-    print("Fixing spconv installation...")
-
-    !pip uninstall -y spconv-cu118 spconv-cu121
-    !pip install -q cumm-cu118
-    !pip install -q --no-deps spconv-cu118
-
-    import spconv.pytorch as spconv
-    print("✅ spconv fixed!")
+# Uncomment to try anyway (may take 5-10 min to compile, may fail):
+# !python tests/test_modules_bc.py
 
 # =============================================================================
-# CELL 4: Test Modules B & C (Neural Networks)
-# =============================================================================
-
-import torch
-print(f"GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
-
-!python tests/test_modules_bc.py
-
-# =============================================================================
-# CELL 5: Visualize Results
+# CELL 4: Visualize Results
 # =============================================================================
 
 import trimesh
@@ -839,7 +847,7 @@ plot_mesh('output/01_original.obj', 'Original')
 plot_mesh('output/03_reconstructed.obj', 'Reconstructed')
 
 # =============================================================================
-# CELL 6: Download Results
+# CELL 5: Download Results
 # =============================================================================
 
 from google.colab import files
@@ -852,31 +860,37 @@ files.download('results.zip')
 
 ## 🎯 What You Can Do in Colab
 
-✅ **Working Now:**
+✅ **Working Perfectly:**
 
-- Module A: Wavelet transform pipeline
-- Module B: Sparse U-Net architecture
-- Module C: Diffusion model
-- Mesh processing and reconstruction
-- Quality evaluation
-- Visualization
+- ✅ Module A: Wavelet transform pipeline (full functionality!)
+- ✅ Mesh to sparse wavelet conversion
+- ✅ SDF generation (headless-compatible)
+- ✅ Quality evaluation and metrics
+- ✅ 3D visualization with matplotlib
+- ✅ Custom mesh uploads and processing
+- ✅ Parameter tuning (resolution, threshold, levels)
+
+❌ **Not Available in Colab (use local setup):**
+
+- ❌ Module B: Sparse U-Net (requires spconv)
+- ❌ Module C: Diffusion model (requires spconv)
+- ❌ Neural network training
 
 ⏳ **Coming Soon:**
 
-- Module D: Multi-view encoder
-- Full training pipeline
-- Large-scale dataset processing
+- 🐳 Docker container with pre-built spconv
+- 📦 Module D: Multi-view encoder
+- 🚀 Full training pipeline
 
 ---
 
-## 💡 Tips for Best Results
+## 💡 Tips for Best Results in Colab
 
-1. **Use GPU runtime** for Modules B & C (neural networks)
-2. **Start with resolution 64 or 128** for quick testing
-3. **Use resolution 256** for high quality results
-4. **Monitor memory** with `!nvidia-smi`
-5. **Save checkpoints** regularly if training
-6. **Download results** before runtime disconnects
+1. **Start with resolution 64 or 128** for quick testing
+2. **Use resolution 256** for high quality results (slower)
+3. **Download results** before runtime disconnects (12hr limit)
+4. **Test Module A thoroughly** before moving to local GPU setup for Modules B & C
+5. **Download results** before runtime disconnects
 
 ---
 
