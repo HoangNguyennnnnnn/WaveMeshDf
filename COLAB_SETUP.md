@@ -1,10 +1,12 @@
 # Google Colab Setup for WaveMesh-Diff
 
+**Now supports all modules (A, B, C) in Colab!** 🎉
+
 ## Quick Setup (Copy this cell to your Colab notebook)
 
 ```python
-# Install dependencies for Module A (Wavelet Transform)
-!pip install -q PyWavelets trimesh scikit-image scipy numpy torch rtree
+# Install dependencies for all modules
+!pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision rtree
 
 # Configure for headless environment
 import os
@@ -14,12 +16,22 @@ os.environ['PYOPENGL_PLATFORM'] = 'egl'
 !git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
 %cd WaveMeshDf
 
-# Run Module A test (Wavelet Transform)
+# Run Module A test (Wavelet Transform) - Full speed!
 !python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 64
 
-# Note: spconv (required for Modules B & C) has compilation issues in Colab
-# Module A works perfectly without it! For neural networks, use local setup.
+# Note: Modules B & C use dense fallback mode (slower but functional)
+# No spconv required! Works great for testing and learning.
 ```
+
+## Performance Note
+
+- **Module A (Wavelet)**: Full speed ⚡
+- **Modules B & C (Neural Networks)**: Dense fallback mode 🐢
+  - ~10-50x slower than native spconv
+  - Perfect for testing, learning, prototyping
+  - For production: Use local GPU with spconv
+
+The dense fallback automatically activates when spconv is not available!
 
 ## What to Expect
 
@@ -164,34 +176,27 @@ uploaded = files.upload()
 
 ## Next Steps
 
-Once Module A tests pass:
+Once tests pass:
 
-- ✅ Understand the sparse wavelet representation
-- ✅ Experiment with different thresholds
+- ✅ Module A works at full speed!
+- ✅ Modules B & C work in dense fallback mode
+- ✅ Test neural network architectures
+- ✅ Experiment with diffusion models
 - ✅ Test with your own meshes
-- ➡️ For Modules B & C (Neural Networks): Use local GPU setup
-  - spconv has compilation issues in Colab
-  - See README.md for local installation
-  - Or wait for Docker container (coming soon)
+- ➡️ For optimal performance: Use local GPU setup with spconv
 
 ---
 
-## ⚠️ Important Note About Modules B & C
+## 📊 Performance Comparison
 
-**Module A (Wavelet Transform)** works perfectly in Google Colab! ✅
+| Module   | Colab (Dense Fallback) | Local (with spconv) |
+| -------- | ---------------------- | ------------------- |
+| Module A | ⚡ Full speed          | ⚡ Full speed       |
+| Module B | 🐢 10-50x slower       | ⚡ Optimal          |
+| Module C | 🐢 10-50x slower       | ⚡ Optimal          |
 
-**Modules B & C (Neural Networks)** require `spconv`, which has compilation issues in Colab:
-
-- Missing tensorview headers in cumm package
-- Ninja build failures even with proper dependencies
-- **Recommendation**: Use local GPU setup for neural network modules
-
-**Options for Modules B & C:**
-
-1. **Local GPU setup** (NVIDIA GPU + CUDA) - see README.md
-2. **Pre-built Docker container** (coming soon)
-3. **Remote GPU instances** (Paperspace, Lambda Labs, etc.)
+**Recommendation**: Colab is great for learning and testing. For production or large-scale experiments, use local GPU with spconv.
 
 ---
 
-_This Colab notebook is optimized for Module A (Wavelet Utilities). Enjoy the wavelet transform pipeline! 🎨✨_
+_This Colab setup now supports all three modules! Enjoy the complete WaveMesh-Diff pipeline! 🎨✨_

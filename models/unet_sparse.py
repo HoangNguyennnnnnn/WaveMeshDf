@@ -1,13 +1,19 @@
 """
 Sparse 3D U-Net for WaveMesh-Diff
 Uses sparse convolutions to efficiently process sparse wavelet coefficients
+Compatible with Google Colab (uses dense fallback when spconv unavailable)
 """
 
 import torch
 import torch.nn as nn
-import spconv.pytorch as spconv
 from typing import List, Optional, Tuple
 import math
+
+# Use compatibility layer for spconv
+from .spconv_compat import (
+    SubMConv3d, SparseConv3d, SparseInverseConv3d, SparseConvTensor, 
+    SparseSequential, BatchNorm, is_spconv_available
+)
 
 
 class SparseResBlock(nn.Module):
@@ -32,7 +38,7 @@ class SparseResBlock(nn.Module):
         
         # First convolution
         if use_subm and stride == 1:
-            self.conv1 = spconv.SubMConv3d(
+            self.conv1 = SubMConv3d(
                 in_channels,
                 out_channels,
                 kernel_size=3,
@@ -41,7 +47,7 @@ class SparseResBlock(nn.Module):
                 indice_key=indice_key
             )
         else:
-            self.conv1 = spconv.SparseConv3d(
+            self.conv1 = SparseConv3d(
                 in_channels,
                 out_channels,
                 kernel_size=3,
@@ -51,11 +57,11 @@ class SparseResBlock(nn.Module):
                 indice_key=indice_key
             )
         
-        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.bn1 = BatchNorm(out_channels)
         self.relu = nn.ReLU(inplace=True)
         
         # Second convolution (always submanifold)
-        self.conv2 = spconv.SubMConv3d(
+        self.conv2 = SubMConv3d(
             out_channels,
             out_channels,
             kernel_size=3,
@@ -63,24 +69,24 @@ class SparseResBlock(nn.Module):
             bias=False,
             indice_key=indice_key
         )
-        self.bn2 = nn.BatchNorm1d(out_channels)
+        self.bn2 = BatchNorm(out_channels)
         
         # Skip connection
         if in_channels != out_channels or stride != 1:
-            self.shortcut = spconv.SparseSequential(
-                spconv.SparseConv3d(
+            self.shortcut = SparseSequential(
+                SparseConv3d(
                     in_channels,
                     out_channels,
                     kernel_size=1,
                     stride=stride,
                     bias=False
                 ),
-                nn.BatchNorm1d(out_channels)
+                BatchNorm(out_channels)
             )
         else:
             self.shortcut = None
     
-    def forward(self, x: spconv.SparseConvTensor) -> spconv.SparseConvTensor:
+    def forward(self, x: SparseConvTensor) -> SparseConvTensor:
         identity = x
         
         out = self.conv1(x)
@@ -141,9 +147,9 @@ class CrossAttentionBlock(nn.Module):
     
     def forward(
         self,
-        x: spconv.SparseConvTensor,
+        x: SparseConvTensor,
         context: torch.Tensor
-    ) -> spconv.SparseConvTensor:
+    ) -> SparseConvTensor:
         """
         Args:
             x: Sparse features (N_sparse, feature_dim)
@@ -232,9 +238,9 @@ class SparseUNetEncoder(nn.Module):
         self.strides = strides
         
         # Input convolution
-        self.input_conv = spconv.SparseSequential(
-            spconv.SubMConv3d(in_channels, channels[0], kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm1d(channels[0]),
+        self.input_conv = SparseSequential(
+            SubMConv3d(in_channels, channels[0], kernel_size=3, padding=1, bias=False),
+            BatchNorm(channels[0]),
             nn.ReLU(inplace=True)
         )
         
@@ -251,7 +257,7 @@ class SparseUNetEncoder(nn.Module):
                 )
             )
     
-    def forward(self, x: spconv.SparseConvTensor) -> Tuple[spconv.SparseConvTensor, List[spconv.SparseConvTensor]]:
+    def forward(self, x: SparseConvTensor) -> Tuple[SparseConvTensor, List[SparseConvTensor]]:
         x = self.input_conv(x)
         
         skip_connections = []
@@ -284,7 +290,7 @@ class SparseUNetDecoder(nn.Module):
         for i in range(len(channels) - 1):
             # Upsampling
             self.upsample_blocks.append(
-                spconv.SparseInverseConv3d(
+                SparseInverseConv3d(
                     channels[i],
                     channels[i + 1],
                     kernel_size=3,
@@ -313,10 +319,10 @@ class SparseUNetDecoder(nn.Module):
     
     def forward(
         self,
-        x: spconv.SparseConvTensor,
-        skip_connections: List[spconv.SparseConvTensor],
+        x: SparseConvTensor,
+        skip_connections: List[SparseConvTensor],
         context: Optional[torch.Tensor] = None
-    ) -> spconv.SparseConvTensor:
+    ) -> SparseConvTensor:
         
         for i, (upsample, decoder_block) in enumerate(zip(self.upsample_blocks, self.decoder_blocks)):
             # Upsample
@@ -324,6 +330,12 @@ class SparseUNetDecoder(nn.Module):
             
             # Concatenate with skip connection
             skip = skip_connections[-(i + 1)]
+            
+            # Handle potential index mismatch in dense fallback mode
+            if hasattr(x, 'sample_at_indices') and len(x.indices) != len(skip.indices):
+                # Align upsampled tensor to skip connection indices
+                x = x.sample_at_indices(skip.indices)
+            
             x = x.replace_feature(torch.cat([x.features, skip.features], dim=1))
             
             # Decoder block
@@ -369,7 +381,7 @@ class WaveMeshUNet(nn.Module):
         
         # Encoder
         self.encoder = SparseUNetEncoder(
-            in_channels + 1,  # +1 for time embedding concatenated to features
+            in_channels + encoder_channels[0],  # + encoder_channels[0] for time embedding
             encoder_channels,
             encoder_strides
         )
@@ -383,7 +395,7 @@ class WaveMeshUNet(nn.Module):
         )
         
         # Output head
-        self.output_conv = spconv.SubMConv3d(
+        self.output_conv = SubMConv3d(
             decoder_channels[-1],
             out_channels,
             kernel_size=1,
@@ -414,10 +426,10 @@ class WaveMeshUNet(nn.Module):
     
     def forward(
         self,
-        x: spconv.SparseConvTensor,
+        x: SparseConvTensor,
         timesteps: torch.Tensor,
         context: Optional[torch.Tensor] = None
-    ) -> spconv.SparseConvTensor:
+    ) -> SparseConvTensor:
         """
         Forward pass.
         
@@ -458,7 +470,7 @@ def create_sparse_tensor_from_wavelet(
     sparse_data: dict,
     batch_size: int = 1,
     device: str = 'cuda'
-) -> spconv.SparseConvTensor:
+) -> SparseConvTensor:
     """
     Helper function to create SparseTensor from wavelet sparse representation.
     
@@ -491,7 +503,7 @@ def create_sparse_tensor_from_wavelet(
     features = features.float().to(device)
     
     # Create sparse tensor
-    sparse_tensor = spconv.SparseConvTensor(
+    sparse_tensor = SparseConvTensor(
         features=features,
         indices=indices,
         spatial_shape=list(shape),
@@ -521,7 +533,7 @@ if __name__ == "__main__":
     features = torch.randn(num_points, 1).to(device)
     
     # Create sparse tensor
-    x = spconv.SparseConvTensor(
+    x = SparseConvTensor(
         features=features,
         indices=indices,
         spatial_shape=spatial_shape,

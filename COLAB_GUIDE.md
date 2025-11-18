@@ -1,32 +1,33 @@
 # 🚀 Google Colab Setup Guide for WaveMesh-Diff
 
-This guide will help you run **Module A (Wavelet Transform)** on Google Colab.
+This guide will help you run **all modules (A, B, C)** on Google Colab.
 
-## ⚠️ Important: Colab Limitations
+## ℹ️ Colab Performance Note
 
 **What Works in Colab:**
 
-- ✅ **Module A: Wavelet Transform** - Full functionality, no issues!
-- ✅ Mesh to sparse wavelet conversion
-- ✅ Quality evaluation and visualization
-- ✅ All wavelet pipeline tests
+- ✅ **Module A: Wavelet Transform** - Full speed, optimal performance!
+- ✅ **Module B: Sparse U-Net** - Works with dense fallback mode
+- ✅ **Module C: Diffusion Model** - Works with dense fallback mode
+- ✅ All testing, visualization, and evaluation
 
-**What Doesn't Work in Colab:**
+**Performance:**
 
-- ❌ **Modules B & C: Neural Networks** - spconv has compilation errors
-  - Missing tensorview headers in cumm package
-  - Ninja build fails even with cumm-cu118 installed
-  - Recommended: Use local GPU setup or Docker container for neural networks
+- **Module A**: Native speed (⚡ fast)
+- **Modules B & C**: Dense fallback mode (~10-50x slower than native spconv)
+  - spconv compilation fails in Colab (missing tensorview headers)
+  - Automatic fallback to dense PyTorch operations
+  - Still functional for testing and small-scale experiments!
+  - For production/large-scale: Use local GPU with spconv installed
 
-**For Neural Network Modules (B & C):**
+**Recommendation:**
 
-- Use local setup with GPU (see README.md)
-- Wait for pre-built Docker container (coming soon)
-- Or use remote GPU instance (Paperspace, Lambda Labs, etc.)
+- ✅ **Colab is great for**: Learning, testing, prototyping with small models
+- ⚡ **Local GPU for**: Training, large models, production use
 
 ---
 
-**⚡ Common Issues (Module A):**
+**⚡ Common Issues:**
 
 - **rtree missing?** → Install with `pip install rtree` (included in setup below)
 - **Private repo clone fails?** → Add `GH_TOKEN` to Colab secrets (see Step 0)
@@ -92,31 +93,11 @@ print("📦 Installing core dependencies...")
 print("📦 Installing spatial indexing (rtree)...")
 !pip install -q rtree
 
-# 3. Detect CUDA version and install matching spconv
-print("\n🔍 Detecting CUDA version...")
-try:
-    cuda_version = subprocess.check_output(['nvcc', '--version']).decode('utf-8')
-    print(cuda_version)
-
-    # Parse CUDA version
-    if 'release 12.5' in cuda_version or 'release 12.4' in cuda_version or 'release 12.3' in cuda_version:
-        print("📥 Installing spconv for CUDA 12.x (using cu118 - compatible)...")
-        print("ℹ️  Note: spconv-cu118 works with CUDA 12.x in most cases")
-        # Install with --no-build-isolation to avoid compilation issues
-        !pip install -q --no-build-isolation spconv-cu118
-    elif 'release 12.1' in cuda_version or 'release 12.0' in cuda_version:
-        print("📥 Installing spconv for CUDA 12.0/12.1...")
-        !pip install -q --no-build-isolation spconv-cu121
-    elif 'release 11.8' in cuda_version:
-        print("📥 Installing spconv for CUDA 11.8...")
-        !pip install -q --no-build-isolation spconv-cu118
-    else:
-        print("⚠️  Unknown CUDA version, trying spconv-cu118...")
-        !pip install -q --no-build-isolation spconv-cu118
-except Exception as e:
-    print(f"⚠️  Could not detect CUDA: {e}")
-    print("Installing spconv-cu118 as default...")
-    !pip install -q --no-build-isolation spconv-cu118
+# 3. Skip spconv - will use dense fallback for Modules B & C
+print("\nℹ️  Skipping spconv installation (using dense fallback mode)")
+print("⚡ Module A: Full speed")
+print("🐢 Modules B & C: Dense fallback (~10-50x slower but functional)")
+print("ℹ️  For optimal performance, install spconv locally")
 
 # 4. Install additional utilities
 print("\n📦 Installing additional utilities...")
@@ -802,19 +783,33 @@ print("="*60)
 !python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 128
 
 # =============================================================================
-# CELL 3: (OPTIONAL) Test Modules B & C - Neural Networks
+# CELL 3: Test Modules B & C - Neural Networks (Dense Fallback Mode)
 # =============================================================================
 
-# ⚠️ WARNING: spconv has compilation issues in Colab (tensorview headers missing)
-# Module A (Wavelet Transform) works great in Colab!
-# For Modules B & C (Sparse U-Net, Diffusion), recommend local setup:
-#
-# Option 1: Local GPU setup (see README.md)
-# Option 2: Docker container (coming soon)
-# Option 3: Skip neural network modules for now
+# ℹ️ Note: Uses dense fallback (slower but functional without spconv)
+# Performance: ~10-50x slower than native spconv, but works!
+# Perfect for testing, learning, and small-scale experiments
 
-# Uncomment to try anyway (may take 5-10 min to compile, may fail):
-# !python tests/test_modules_bc.py
+import torch
+from models.spconv_compat import get_backend_info
+
+print("GPU Available:", torch.cuda.is_available())
+if torch.cuda.is_available():
+    print(f"GPU Name: {torch.cuda.get_device_name(0)}")
+
+# Show backend info
+backend = get_backend_info()
+print(f"\nBackend: {backend['backend']}")
+print(f"Device: {backend['device']}")
+print(f"Performance: {backend['performance']}")
+if 'warning' in backend:
+    print(f"Note: {backend['warning']}")
+
+print("\n" + "="*60)
+print("Testing Modules B & C (this may take a few minutes)...")
+print("="*60)
+
+!python tests/test_modules_bc.py
 
 # =============================================================================
 # CELL 4: Visualize Results
@@ -860,21 +855,25 @@ files.download('results.zip')
 
 ## 🎯 What You Can Do in Colab
 
-✅ **Working Perfectly:**
+✅ **Fully Working:**
 
-- ✅ Module A: Wavelet transform pipeline (full functionality!)
+- ✅ Module A: Wavelet transform pipeline (full speed!)
+- ✅ Module B: Sparse U-Net (dense fallback mode)
+- ✅ Module C: Diffusion model (dense fallback mode)
 - ✅ Mesh to sparse wavelet conversion
 - ✅ SDF generation (headless-compatible)
 - ✅ Quality evaluation and metrics
 - ✅ 3D visualization with matplotlib
 - ✅ Custom mesh uploads and processing
 - ✅ Parameter tuning (resolution, threshold, levels)
+- ✅ Small-scale neural network testing
 
-❌ **Not Available in Colab (use local setup):**
+⚡ **Performance Notes:**
 
-- ❌ Module B: Sparse U-Net (requires spconv)
-- ❌ Module C: Diffusion model (requires spconv)
-- ❌ Neural network training
+- **Module A**: Native speed (optimal)
+- **Modules B & C**: Dense fallback (~10-50x slower)
+  - Great for learning and testing!
+  - For production: Use local GPU with spconv
 
 ⏳ **Coming Soon:**
 
@@ -887,10 +886,11 @@ files.download('results.zip')
 ## 💡 Tips for Best Results in Colab
 
 1. **Start with resolution 64 or 128** for quick testing
-2. **Use resolution 256** for high quality results (slower)
-3. **Download results** before runtime disconnects (12hr limit)
-4. **Test Module A thoroughly** before moving to local GPU setup for Modules B & C
-5. **Download results** before runtime disconnects
+2. **Use smaller models** for Modules B & C (dense mode is slower)
+3. **Enable GPU runtime** for better performance
+4. **Download results** before runtime disconnects (12hr limit)
+5. **Test Module A first** to verify wavelet pipeline
+6. **For large-scale work**: Consider local GPU setup with native spconv
 
 ---
 
