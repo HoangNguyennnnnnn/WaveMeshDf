@@ -455,3 +455,115 @@ def compute_sparsity(sparse_data: Dict) -> Dict[str, float]:
         'memory_dense_mb': float(total_elements * 4 / 1024 / 1024),  # float32
         'memory_sparse_mb': float(non_zero_elements * 4 / 1024 / 1024),  # approximate
     }
+
+
+# ============================================================================
+# Convenience Functions for Pipeline
+# ============================================================================
+
+def mesh_to_sdf_simple(mesh, resolution: int = 64) -> np.ndarray:
+    """
+    Simple convenience function: mesh object -> SDF grid.
+    Works in headless environments (Colab).
+    
+    Args:
+        mesh: Trimesh mesh object
+        resolution: Grid resolution
+        
+    Returns:
+        Dense SDF grid of shape (resolution, resolution, resolution)
+    """
+    import trimesh
+    
+    # Normalize mesh to unit cube
+    bounds = mesh.bounds
+    center = (bounds[0] + bounds[1]) / 2
+    scale = (bounds[1] - bounds[0]).max() * 1.1  # 10% padding
+    
+    mesh = mesh.copy()
+    mesh.apply_translation(-center)
+    mesh.apply_scale(2.0 / scale)
+    
+    # Create query points
+    x = np.linspace(-1, 1, resolution)
+    y = np.linspace(-1, 1, resolution)
+    z = np.linspace(-1, 1, resolution)
+    
+    xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
+    query_points = np.stack([xx, yy, zz], axis=-1).reshape(-1, 3)
+    
+    # Use simple SDF computation
+    sdf_values = _compute_sdf_simple(mesh, query_points)
+    sdf_grid = sdf_values.reshape(resolution, resolution, resolution)
+    
+    return sdf_grid
+
+
+def sdf_to_sparse_wavelet(
+    sdf_grid: np.ndarray, 
+    threshold: float = 0.01,
+    wavelet: str = 'bior4.4',
+    level: int = 3
+) -> Dict:
+    """
+    Convenience function: SDF grid -> sparse wavelet representation.
+    
+    Args:
+        sdf_grid: Dense SDF array
+        threshold: Sparsification threshold
+        wavelet: Wavelet type
+        level: Decomposition level
+        
+    Returns:
+        Sparse wavelet dictionary
+    """
+    transformer = WaveletTransform3D(wavelet=wavelet, level=level)
+    return transformer.dense_to_sparse_wavelet(sdf_grid, threshold=threshold, return_torch=False)
+
+
+def sparse_wavelet_to_sdf(
+    sparse_data: Dict,
+    resolution: int = None,
+    denoise: bool = True
+) -> np.ndarray:
+    """
+    Convenience function: sparse wavelet -> reconstructed SDF grid.
+    
+    Args:
+        sparse_data: Dictionary from sdf_to_sparse_wavelet
+        resolution: Target resolution (None = use original)
+        denoise: Whether to apply denoising
+        
+    Returns:
+        Reconstructed dense SDF grid
+    """
+    transformer = WaveletTransform3D(
+        wavelet=sparse_data['wavelet'],
+        level=sparse_data['level']
+    )
+    return transformer.sparse_to_dense_wavelet(sparse_data, denoise=denoise)
+
+
+def normalize_mesh(mesh):
+    """
+    Normalize mesh to fit in unit cube centered at origin.
+    
+    Args:
+        mesh: Trimesh mesh object
+        
+    Returns:
+        Normalized mesh (new copy)
+    """
+    mesh = mesh.copy()
+    
+    # Center at origin
+    bounds = mesh.bounds
+    center = (bounds[0] + bounds[1]) / 2
+    mesh.apply_translation(-center)
+    
+    # Scale to unit cube
+    scale = (bounds[1] - bounds[0]).max()
+    if scale > 0:
+        mesh.apply_scale(1.0 / scale)
+    
+    return mesh
