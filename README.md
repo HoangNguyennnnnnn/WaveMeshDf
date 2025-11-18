@@ -4,17 +4,15 @@
 
 A novel approach to 3D mesh generation using diffusion models in the sparse 3D wavelet frequency domain.
 
-## ✨ Google Colab Support
+## 🚀 Quick Setup
 
-**All three modules (A, B, C) now work in Google Colab without compilation!**
+**Choose your environment:**
 
-No need to build spconv or deal with CUDA dependencies. The system automatically falls back to dense PyTorch operations when spconv isn't available.
+- 📖 **[Complete Setup Guide](SETUP_GUIDE.md)** - Google Colab AND Local setup in one place
+- ⚡ **Google Colab**: All modules work instantly, no installation needed
+- 💻 **Local Machine**: Full performance with GPU support
 
-- 📖 **Quick Start**: [COLAB_QUICKSTART.md](COLAB_QUICKSTART.md)
-- 🔧 **Full Guide**: [COLAB_GUIDE.md](COLAB_GUIDE.md)
-- 📊 **Technical Details**: [COLAB_COMPATIBILITY.md](COLAB_COMPATIBILITY.md)
-
-**Performance Note**: Dense fallback is ~10-50x slower than native spconv, but perfect for learning and testing. For production training, use local GPU with spconv.
+**All three modules (A, B, C) work in both environments!**
 
 ## 🎯 Project Overview
 
@@ -42,42 +40,31 @@ WaveMesh-Diff/
 ├── utils/
 ├── requirements.txt
 ├── README.md
-├── QUICKSTART.md
-├── COLAB_SETUP.md             # Google Colab instructions
+├── SETUP_GUIDE.md             # Complete setup for Colab + Local
 └── TROUBLESHOOTING.md         # Common issues & solutions
 ```
 
 ## 🚀 Quick Start
 
-### 1. Installation
+See **[SETUP_GUIDE.md](SETUP_GUIDE.md)** for complete instructions for both Google Colab and Local setup.
+
+### Quick Test (Any Environment)
 
 ```bash
-# Clone the repository
-cd WaveMesh-Diff
+# Clone repository
+git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
+cd WaveMeshDf
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Note: Install appropriate spconv version for your CUDA
-# CUDA 11.8: pip install spconv-cu118
-# CUDA 12.1: pip install spconv-cu121
+# Run test
+python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 128
 ```
 
-**For Google Colab:**
+**For detailed setup instructions, see [SETUP_GUIDE.md](SETUP_GUIDE.md)**
 
-✅ **All modules now work in Colab!** No special installation required.
-
-```bash
-# Install PyTorch and basic dependencies only
-pip install torch torchvision torchaudio PyWavelets pillow pyyaml
-
-# DO NOT install spconv - it causes compilation errors
-# The system will automatically use dense fallback mode
-```
-
-See [COLAB_QUICKSTART.md](COLAB_QUICKSTART.md) for a complete test notebook.
-
-### 2. Test Module A: Wavelet Pipeline
+### Module A: Wavelet Pipeline
 
 ```bash
 # Create a simple test mesh and run the pipeline
