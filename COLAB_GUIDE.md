@@ -128,51 +128,52 @@ else:
     print("   3. GH_TOKEN has 'repo' permissions")
     raise FileNotFoundError("Repository not cloned")
 
-# 6. Verify installation
+# 6. Verify installation (skip spconv import to avoid compilation)
 print("\n🔍 Verifying installation...")
-if os.path.exists('verify_installation.py'):
-    !python verify_installation.py
+
+# Basic verification (skip spconv for now - will verify during tests)
+import sys
+errors = []
+
+try:
+    import pywt
+    print("✓ PyWavelets imported successfully")
+except ImportError as e:
+    errors.append(f"PyWavelets: {e}")
+
+try:
+    import trimesh
+    print("✓ trimesh imported successfully")
+except ImportError as e:
+    errors.append(f"trimesh: {e}")
+
+try:
+    import torch
+    print(f"✓ PyTorch {torch.__version__} (CUDA: {torch.cuda.is_available()})")
+except ImportError as e:
+    errors.append(f"PyTorch: {e}")
+
+try:
+    import rtree
+    print("✓ rtree imported successfully")
+except ImportError as e:
+    errors.append(f"rtree: {e}")
+
+# Skip spconv import here - it will be verified when running tests
+print("ℹ️  spconv will be verified when running neural network tests")
+
+if errors:
+    print("\n❌ Import errors:")
+    for err in errors:
+        print(f"  - {err}")
 else:
-    print("⚠️  verify_installation.py not found, running basic checks...")
-
-    # Basic verification
-    import sys
-    errors = []
-
-    try:
-        import pywt
-        print("✓ PyWavelets imported successfully")
-    except ImportError as e:
-        errors.append(f"PyWavelets: {e}")
-
-    try:
-        import trimesh
-        print("✓ trimesh imported successfully")
-    except ImportError as e:
-        errors.append(f"trimesh: {e}")
-
-    try:
-        import torch
-        print(f"✓ PyTorch {torch.__version__} (CUDA: {torch.cuda.is_available()})")
-    except ImportError as e:
-        errors.append(f"PyTorch: {e}")
-
-    try:
-        import spconv.pytorch as spconv
-        print(f"✓ spconv imported successfully")
-    except ImportError as e:
-        errors.append(f"spconv: {e}")
-
-    if errors:
-        print("\n❌ Import errors:")
-        for err in errors:
-            print(f"  - {err}")
-    else:
-        print("\n✅ All core dependencies verified!")
+    print("\n✅ Core dependencies verified!")
 
 print("\n" + "="*60)
 print("✅ Setup complete! Ready to run WaveMesh-Diff")
 print("="*60)
+print("\nℹ️  Note: Module A (Wavelet) works without spconv")
+print("   spconv is only needed for Modules B & C (Neural Networks)")
 ```
 
 ---
@@ -240,6 +241,30 @@ Make sure GPU is enabled:
 import torch
 print(f"GPU Available: {torch.cuda.is_available()}")
 print(f"GPU Name: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'None'}")
+```
+
+### Fix spconv Installation (If You See Compilation Errors)
+
+**If the initial setup had spconv compilation errors**, fix it before running neural network tests:
+
+```python
+# Uninstall broken spconv
+!pip uninstall -y spconv-cu118 spconv-cu121
+
+# Method 1: Try installing cumm first (usually fixes the issue)
+!pip install cumm-cu118
+!pip install --no-deps spconv-cu118
+
+# Method 2: If Method 1 fails, install from specific version
+# !pip install spconv-cu118==2.3.6
+
+# Verify spconv works
+try:
+    import spconv.pytorch as spconv
+    print("✅ spconv imported successfully!")
+except Exception as e:
+    print(f"❌ spconv import failed: {e}")
+    print("You can still use Module A (Wavelet), but Modules B & C require spconv")
 ```
 
 ### Run Neural Network Tests
@@ -570,23 +595,29 @@ print(f"PyTorch CUDA: {torch.version.cuda}")
 
 **Error:** `ninja: build stopped: subcommand failed` or `fatal error: tensorview/pybind_utils.h: No such file or directory`
 
-**Solution:** Install with `--no-build-isolation` flag to use pre-built wheels:
+**Root Cause:** The `--no-build-isolation` flag doesn't prevent compilation when importing spconv. The compilation happens on first import.
+
+**Solution - Install cumm first, then spconv without dependencies:**
 
 ```python
-# Uninstall any partial installation
+# Method 1: Install cumm dependency first (RECOMMENDED)
 !pip uninstall -y spconv-cu118 spconv-cu121
-
-# Reinstall with --no-build-isolation to avoid compilation
-!pip install --no-build-isolation spconv-cu118
-
-# If that still fails, try installing dependencies first
 !pip install cumm-cu118
-!pip install --no-build-isolation spconv-cu118
+!pip install --no-deps spconv-cu118
 
 # Verify
 import spconv.pytorch as spconv
 print("✅ spconv installed successfully!")
+
+# Method 2: If Method 1 fails, try a specific older version
+# !pip uninstall -y spconv-cu118
+# !pip install spconv-cu118==2.3.6
+
+# Method 3: If all else fails, use CPU-only mode (Module A still works!)
+# Just skip spconv - you can still use the wavelet transform pipeline
 ```
+
+**Why this works:** Installing `cumm-cu118` first provides the missing tensorview headers that spconv needs. Using `--no-deps` prevents pip from trying to rebuild cumm.
 
 ### Issue 3: Missing rtree module
 
@@ -705,22 +736,22 @@ print("📦 Installing dependencies...")
 !pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision tqdm pyyaml einops rtree
 
 # Auto-detect CUDA version and install matching spconv
-print("\n🔍 Detecting CUDA version...")
+print("\n🔍 Installing spconv (cumm + spconv)...")
 try:
-    cuda_version = subprocess.check_output(['nvcc', '--version']).decode('utf-8')
-    print(f"CUDA version detected: {cuda_version.split('release ')[1].split(',')[0]}")
+    # Install cumm first (provides tensorview headers)
+    print("📥 Installing cumm-cu118...")
+    !pip install -q cumm-cu118
 
-    # spconv-cu118 works with CUDA 12.x (forward compatible)
-    if 'release 12.' in cuda_version:
-        print("ℹ️  Using spconv-cu118 (compatible with CUDA 12.x)")
-        !pip install -q --no-build-isolation spconv-cu118
-    elif 'release 11.8' in cuda_version:
-        !pip install -q --no-build-isolation spconv-cu118
-    else:
-        !pip install -q --no-build-isolation spconv-cu118
-except:
-    print("⚠️  CUDA detection failed, using spconv-cu118 as default")
-    !pip install -q --no-build-isolation spconv-cu118# Clone repository with authentication
+    # Then install spconv without dependencies
+    print("📥 Installing spconv-cu118...")
+    !pip install -q --no-deps spconv-cu118
+
+    print("✅ spconv installed!")
+except Exception as e:
+    print(f"⚠️ spconv installation issue: {e}")
+    print("Module A (Wavelet) will still work. Fix spconv before Modules B & C.")
+
+# Clone repository with authentication
 print("\n📥 Cloning repository...")
 try:
     from google.colab import userdata
@@ -731,14 +762,11 @@ except:
 
 %cd WaveMeshDf
 
-# Verify
+# Verify (skip spconv import to avoid triggering compilation)
 print("\n🔍 Verifying installation...")
-if os.path.exists('verify_installation.py'):
-    !python verify_installation.py
-else:
-    import pywt, trimesh, torch
-    import spconv.pytorch as spconv
-    print("✅ All core dependencies verified!")
+import pywt, trimesh, torch, rtree
+print("✅ Core dependencies verified!")
+print("ℹ️  spconv will be tested when running neural network tests")
 
 print("\n" + "="*60)
 print("✅ Setup complete! Ready to run WaveMesh-Diff")
@@ -751,7 +779,28 @@ print("="*60)
 !python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 128
 
 # =============================================================================
-# CELL 3: Test Modules B & C (Neural Networks)
+# CELL 3: Fix spconv (if needed for Modules B & C)
+# =============================================================================
+
+# Only run this cell if you see spconv errors when testing neural networks
+# Skip this if Module A tests worked fine and you don't need neural networks yet
+
+try:
+    import spconv.pytorch as spconv
+    print("✅ spconv already working!")
+except Exception as e:
+    print(f"⚠️ spconv issue detected: {e}")
+    print("Fixing spconv installation...")
+
+    !pip uninstall -y spconv-cu118 spconv-cu121
+    !pip install -q cumm-cu118
+    !pip install -q --no-deps spconv-cu118
+
+    import spconv.pytorch as spconv
+    print("✅ spconv fixed!")
+
+# =============================================================================
+# CELL 4: Test Modules B & C (Neural Networks)
 # =============================================================================
 
 import torch
@@ -760,7 +809,7 @@ print(f"GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'C
 !python tests/test_modules_bc.py
 
 # =============================================================================
-# CELL 4: Visualize Results
+# CELL 5: Visualize Results
 # =============================================================================
 
 import trimesh
@@ -790,7 +839,7 @@ plot_mesh('output/01_original.obj', 'Original')
 plot_mesh('output/03_reconstructed.obj', 'Reconstructed')
 
 # =============================================================================
-# CELL 5: Download Results
+# CELL 6: Download Results
 # =============================================================================
 
 from google.colab import files
