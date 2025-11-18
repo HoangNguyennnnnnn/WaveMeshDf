@@ -29,6 +29,15 @@ def main():
     print_section("WAVEMESH-DIFF: TEST ALL MODULES")
     print("Testing 4 core modules: Wavelet, U-Net, Diffusion, MultiView")
     
+    # Check for transformers availability
+    try:
+        import transformers
+        print("\n✅ transformers library available - DINOv2 encoder will be used")
+    except ImportError:
+        print("\n⚠️  transformers not installed - using fallback CNN encoder")
+        print("   Install with: pip install transformers")
+        print("   This is OK for testing, but DINOv2 recommended for production")
+    
     test_results = {
         'Module A': False,
         'Module B': False,

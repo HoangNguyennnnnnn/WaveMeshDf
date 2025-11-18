@@ -37,9 +37,14 @@ WaveMesh-Diff kết hợp 4 modules chính:
 git clone https://github.com/HoangNguyennnnnnn/WaveMeshDf.git
 cd WaveMeshDf
 
-# Cài dependencies
+# Cài core dependencies
 pip install -r requirements.txt
+
+# Cài optional dependencies (recommended cho DINOv2)
+python install_optional.py
 ```
+
+**📖 Xem [INSTALLATION.md](INSTALLATION.md) để biết chi tiết về troubleshooting.**
 
 ### 2. Test Installation
 
@@ -48,8 +53,8 @@ pip install -r requirements.txt
 python test_all_modules.py
 # Expected: 4/4 modules PASS ✅
 
-# Kỳ vọng: 3/4 hoặc 4/4 modules PASS
-# (Module A cần PyWavelets)
+# Verify complete setup
+python verify_complete_setup.py
 ```
 
 ### 3. Download Data & Train

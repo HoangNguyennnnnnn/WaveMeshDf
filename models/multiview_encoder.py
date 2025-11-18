@@ -105,7 +105,7 @@ class DINOv2Encoder(nn.Module):
             self.available = True
             
         except (ImportError, OSError, Exception) as e:
-            print("⚠️  transformers not available. Using random projection as placeholder.")
+            # Silently fall back to CNN encoder if transformers not available
             self.available = False
             # Fallback: simple CNN for testing
             self.fallback_encoder = nn.Sequential(
