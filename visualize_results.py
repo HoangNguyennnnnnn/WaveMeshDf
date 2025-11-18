@@ -195,7 +195,7 @@ def run_visualization_demo():
         out_channels=1,
         encoder_channels=[16, 32, 64],
         decoder_channels=[64, 32, 16],
-        spatial_shape=(32, 32, 32)
+        use_attention=False  # Disable for faster testing
     ).to(device)
     print(f"✅ Model created with {sum(p.numel() for p in model.parameters()):,} parameters")
     

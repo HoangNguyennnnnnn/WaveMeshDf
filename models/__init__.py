@@ -20,6 +20,14 @@ from .spconv_compat import (
     sparse_tensor
 )
 
+from .multiview_encoder import (
+    MultiViewEncoder,
+    DINOv2Encoder,
+    CameraPoseEmbedding,
+    MultiViewFusion,
+    create_multiview_encoder
+)
+
 __all__ = [
     'WaveMeshUNet',
     'SparseResBlock',
@@ -30,5 +38,10 @@ __all__ = [
     'GaussianDiffusion',
     'SparseConvTensor',
     'get_backend_info',
-    'sparse_tensor'
+    'sparse_tensor',
+    'MultiViewEncoder',
+    'DINOv2Encoder',
+    'CameraPoseEmbedding',
+    'MultiViewFusion',
+    'create_multiview_encoder'
 ]
