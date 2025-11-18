@@ -1,16 +1,17 @@
 # WaveMesh-Diff
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb) ← **NEW: Simple, no errors!**
 
 **3D Mesh Generation using Diffusion Models in Wavelet Domain**
 
 Phát sinh 3D mesh từ multi-view images sử dụng diffusion models trên sparse 3D wavelet coefficients.
 
-> **🚀 Quick Start:** Try our [Google Colab notebook](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb) for instant demo (no installation needed)!
+> **🚀 Quick Start:**
+>
+> - **[Minimal Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb)** - Gọn, chạy ngay không lỗi (5-10 phút)
+> - **[Full Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)** - Đầy đủ demos, visualizations (15-20 phút)
 >
 > **⚡ Performance Tip:** Enable GPU in Colab (Runtime → Change runtime type → T4 GPU) for 10-50x faster execution!
->
-> **💾 Memory Note:** Notebook auto-detects your RAM and uses safe resolution (32³ for free tier, 64³ for Pro)
 >
 > **📖 Colab Help:** See [COLAB_SETUP.md](COLAB_SETUP.md) for GPU setup, memory optimization, and troubleshooting
 
