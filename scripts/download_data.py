@@ -48,8 +48,17 @@ def download_modelnet40(data_dir='./data'):
     print("🗑️  Cleaned up zip file")
     
     # Show stats
-    train_files = list((extract_path / "train").rglob("*.off"))
-    test_files = list((extract_path / "test").rglob("*.off"))
+    # ModelNet40 structure: categories directly, each has train/ and test/ subfolders
+    categories = [d.name for d in extract_path.iterdir() if d.is_dir()]
+    
+    train_files = []
+    test_files = []
+    for cat in categories:
+        cat_path = extract_path / cat
+        if (cat_path / "train").exists():
+            train_files.extend(list((cat_path / "train").rglob("*.off")))
+        if (cat_path / "test").exists():
+            test_files.extend(list((cat_path / "test").rglob("*.off")))
     
     print("\n" + "="*60)
     print("📊 ModelNet40 Statistics:")
@@ -57,9 +66,6 @@ def download_modelnet40(data_dir='./data'):
     print(f"Training samples: {len(train_files)}")
     print(f"Test samples: {len(test_files)}")
     print(f"Total: {len(train_files) + len(test_files)}")
-    
-    # List categories
-    categories = [d.name for d in (extract_path / "train").iterdir() if d.is_dir()]
     print(f"Categories ({len(categories)}): {', '.join(sorted(categories)[:10])}...")
     print("="*60)
     
