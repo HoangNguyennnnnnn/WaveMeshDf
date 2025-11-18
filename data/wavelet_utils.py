@@ -51,18 +51,38 @@ class WaveletTransform3D:
         original_shape = sdf_grid.shape
         
         # Perform 3D Discrete Wavelet Transform
-        # dwtn returns a dictionary with approximation coeffs ('aaa') and detail coeffs
+        # dwtn returns a dictionary with keys like 'aaa', 'aad', 'ada', etc.
+        # where 'a' = approximation, 'd' = detail for each dimension
         coeffs = pywt.dwtn(sdf_grid, wavelet=self.wavelet, mode='periodization')
         
+        # Find the approximation key (usually 'aaa' but check what's available)
+        approx_key = 'a' * 3  # 'aaa' for 3D
+        if approx_key not in coeffs:
+            # Try to find any key with all 'a's
+            approx_keys = [k for k in coeffs.keys() if k.count('a') == 3]
+            if approx_keys:
+                approx_key = approx_keys[0]
+            else:
+                # Fallback: use first key as approximation
+                approx_key = list(coeffs.keys())[0]
+        
         # Multi-level decomposition
+        all_coeffs_levels = [coeffs]  # Store coefficients from each level
+        
         for i in range(1, self.level):
             # Further decompose the approximation coefficients
-            approx = coeffs['a' * 3]  # 'aaa' for 3D
-            coeffs_next = pywt.dwtn(approx, wavelet=self.wavelet, mode='periodization')
-            
-            # Remove the old approximation and add new decomposition
-            del coeffs['a' * 3]
-            coeffs.update({f"L{i}_{k}": v for k, v in coeffs_next.items()})
+            if approx_key in coeffs:
+                approx = coeffs[approx_key]
+                coeffs_next = pywt.dwtn(approx, wavelet=self.wavelet, mode='periodization')
+                
+                # Store level info
+                all_coeffs_levels.append(coeffs_next)
+                
+                # Update coeffs dictionary
+                coeffs = coeffs_next
+            else:
+                # Can't decompose further
+                break
         
         # Flatten all coefficient sub-bands into a single representation
         # Each sub-band becomes a channel in our sparse representation
@@ -70,22 +90,25 @@ class WaveletTransform3D:
         all_positions = []
         channel_info = []
         
-        for key, coeff_array in sorted(coeffs.items()):
-            # Apply threshold - sparsify
-            mask = np.abs(coeff_array) > threshold
-            
-            if np.any(mask):
-                # Get coordinates where coefficients exceed threshold
-                indices = np.array(np.where(mask)).T  # Shape: (N_nonzero, 3)
-                values = coeff_array[mask]  # Shape: (N_nonzero,)
+        # Process all levels
+        for level_idx, level_coeffs in enumerate(all_coeffs_levels):
+            for key, coeff_array in sorted(level_coeffs.items()):
+                # Apply threshold - sparsify
+                mask = np.abs(coeff_array) > threshold
                 
-                all_positions.append(indices)
-                all_coeffs.append(values)
-                channel_info.append({
-                    'key': key,
-                    'shape': coeff_array.shape,
-                    'count': len(values)
-                })
+                if np.any(mask):
+                    # Get coordinates where coefficients exceed threshold
+                    indices = np.array(np.where(mask)).T  # Shape: (N_nonzero, 3)
+                    values = coeff_array[mask]  # Shape: (N_nonzero,)
+                    
+                    all_positions.append(indices)
+                    all_coeffs.append(values)
+                    channel_info.append({
+                        'key': key,
+                        'level': level_idx,
+                        'shape': coeff_array.shape,
+                        'count': len(values)
+                    })
         
         # Concatenate all sparse coefficients
         if len(all_positions) == 0:
@@ -119,7 +142,7 @@ class WaveletTransform3D:
             'shape': original_shape,
             'level': self.level,
             'wavelet': self.wavelet,
-            'coeffs_structure': coeffs,  # Keep original structure for reconstruction
+            'coeffs_levels': all_coeffs_levels,  # Keep all levels for reconstruction
             'channel_info': channel_info,
             'threshold': threshold
         }
@@ -155,20 +178,22 @@ class WaveletTransform3D:
         if torch.is_tensor(features):
             features = features.cpu().numpy()
         
-        # Reconstruct coefficient dictionary
-        coeffs_structure = sparse_data['coeffs_structure']
+        # Reconstruct coefficient levels
+        coeffs_levels = sparse_data['coeffs_levels']
         channel_info = sparse_data['channel_info']
         
-        # Initialize empty coefficient arrays
-        reconstructed_coeffs = {}
-        for key, coeff_array in coeffs_structure.items():
-            reconstructed_coeffs[key] = np.zeros_like(coeff_array, dtype=np.float32)
+        # Initialize empty coefficient arrays for all levels
+        reconstructed_levels = []
+        for level_coeffs in coeffs_levels:
+            level_dict = {}
+            for key, coeff_array in level_coeffs.items():
+                level_dict[key] = np.zeros_like(coeff_array, dtype=np.float32)
+            reconstructed_levels.append(level_dict)
         
         # Fill in the sparse values
-        current_idx = 0
         for ch_idx, ch_info in enumerate(channel_info):
             key = ch_info['key']
-            count = ch_info['count']
+            level_idx = ch_info['level']
             
             # Get indices and values for this channel
             channel_mask = indices[:, 3] == ch_idx
@@ -177,31 +202,28 @@ class WaveletTransform3D:
             
             # Place values back into dense array
             for (x, y, z), val in zip(channel_indices, channel_values):
-                reconstructed_coeffs[key][x, y, z] = val
+                reconstructed_levels[level_idx][key][x, y, z] = val
         
         # Perform inverse multi-level DWT
-        # Reconstruct from finest to coarsest level
-        current_coeffs = reconstructed_coeffs
+        # Start from the deepest level and work backwards
+        num_levels = len(reconstructed_levels)
         
-        for i in range(self.level - 1, 0, -1):
-            # Gather coefficients for this level
-            level_coeffs = {k.split('_')[1]: v for k, v in current_coeffs.items() 
-                          if k.startswith(f'L{i}_')}
+        # Start with the deepest level (last in list)
+        current_approx = None
+        
+        for level_idx in range(num_levels - 1, -1, -1):
+            level_coeffs = reconstructed_levels[level_idx]
             
-            if level_coeffs:
-                # Inverse transform
-                approx = pywt.idwtn(level_coeffs, wavelet=self.wavelet, mode='periodization')
-                
-                # Remove processed level and add approximation
-                current_coeffs = {k: v for k, v in current_coeffs.items() 
-                                if not k.startswith(f'L{i}_')}
-                current_coeffs[f'L{i-1}_aaa'] = approx
+            if current_approx is not None:
+                # Replace the approximation with the one from deeper level
+                approx_key = 'a' * 3  # 'aaa'
+                if approx_key in level_coeffs:
+                    level_coeffs[approx_key] = current_approx
+            
+            # Perform inverse DWT for this level
+            current_approx = pywt.idwtn(level_coeffs, wavelet=self.wavelet, mode='periodization')
         
-        # Final inverse transform
-        final_coeffs = {k.split('_')[1] if '_' in k else k: v 
-                       for k, v in current_coeffs.items()}
-        
-        reconstructed_sdf = pywt.idwtn(final_coeffs, wavelet=self.wavelet, mode='periodization')
+        reconstructed_sdf = current_approx
         
         # Ensure correct shape
         target_shape = sparse_data['shape']
