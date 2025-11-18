@@ -16,6 +16,7 @@ WaveMesh-Diff kết hợp 4 modules chính:
 4. **Module D - Multi-view Encoder**: Encode images từ nhiều góc nhìn
 
 **Ưu điểm:**
+
 - ✅ Tiết kiệm memory (sparse representation)
 - ✅ Scalable (có thể tăng resolution)
 - ✅ Conditioning từ multi-view images
@@ -118,6 +119,7 @@ WaveMesh-Diff/
 Chuyển đổi giữa 3D SDF và sparse wavelet coefficients.
 
 **API:**
+
 ```python
 from data import mesh_to_sdf_simple, sdf_to_sparse_wavelet, sparse_wavelet_to_sdf
 
@@ -134,6 +136,7 @@ sdf_recon = sparse_wavelet_to_sdf(coeffs, coords, shape=(32,32,32))
 3D U-Net với sparse convolutions, time embedding, và cross-attention.
 
 **API:**
+
 ```python
 from models import WaveMeshUNet
 
@@ -154,6 +157,7 @@ output = model(x_sparse, timestep, context=conditioning)
 DDPM và DDIM diffusion process.
 
 **API:**
+
 ```python
 from models import GaussianDiffusion
 
@@ -174,6 +178,7 @@ samples = diffusion.sample(shape=(B, C, H, W, D), method='ddim', steps=50)
 Encode multi-view images thành conditioning features.
 
 **API:**
+
 ```python
 from models import MultiViewEncoder, create_multiview_encoder
 
@@ -213,6 +218,7 @@ python scripts/download_data.py --dataset shapenet
 ### Training Pipeline
 
 Xem **[ROADMAP.md](ROADMAP.md)** để có:
+
 - Dataset implementation đầy đủ
 - Training loop với all 4 modules
 - Evaluation metrics
@@ -243,6 +249,7 @@ python -m pytest tests/ -v
 ```
 
 **Test Results:**
+
 - ✅ Module B: Sparse U-Net (395K params)
 - ✅ Module C: Gaussian Diffusion (DDPM/DDIM)
 - ✅ Module D: Multi-view Encoder (with fallback)
@@ -269,12 +276,12 @@ huggingface-cli login            # Download DINOv2 weights
 
 ### Expected Speed
 
-| Setup | Resolution | Time/Epoch | Hardware |
-|-------|-----------|-----------|----------|
-| CPU Dense | 32³ | ~30 min | i7 |
-| GPU Dense | 32³ | ~5 min | RTX 3080 |
-| GPU Sparse | 32³ | ~2 min | RTX 3080 + spconv |
-| GPU Sparse | 64³ | ~8 min | RTX 3080 + spconv |
+| Setup      | Resolution | Time/Epoch | Hardware          |
+| ---------- | ---------- | ---------- | ----------------- |
+| CPU Dense  | 32³        | ~30 min    | i7                |
+| GPU Dense  | 32³        | ~5 min     | RTX 3080          |
+| GPU Sparse | 32³        | ~2 min     | RTX 3080 + spconv |
+| GPU Sparse | 64³        | ~8 min     | RTX 3080 + spconv |
 
 ---
 
@@ -283,17 +290,20 @@ huggingface-cli login            # Download DINOv2 weights
 ### Common Issues
 
 **"ModuleNotFoundError: No module named 'pywt'"**
+
 ```bash
 pip install PyWavelets
 ```
 
 **"transformers not available"**
+
 ```bash
 pip install transformers huggingface_hub
 # Code tự động fallback sang CNN
 ```
 
 **"CUDA out of memory"**
+
 ```bash
 # Giảm batch size hoặc resolution
 python train.py --batch_size 2 --resolution 16
@@ -316,18 +326,21 @@ python train.py --batch_size 2 --resolution 16
 ## 🎯 Roadmap
 
 ### Hiện Tại (v0.1)
+
 - ✅ 4 modules hoàn chỉnh
 - ✅ Testing infrastructure
 - ✅ Documentation
 - ⚠️ Chưa có trained weights
 
 ### Tiếp Theo (v0.2)
+
 - [ ] Training scripts hoàn chỉnh
 - [ ] Pre-trained weights
 - [ ] Evaluation metrics
 - [ ] Demo notebooks
 
 ### Tương Lai (v1.0)
+
 - [ ] Multi-GPU training
 - [ ] Classifier-free guidance
 - [ ] Progressive training

@@ -30,6 +30,7 @@ python test_all_modules.py
 ```
 
 **Kỳ vọng:**
+
 ```
 Results: 3/4 or 4/4 modules passed
   Module A             ✅ PASS  (nếu đã cài PyWavelets)
@@ -109,6 +110,7 @@ python visualize_results.py
 ```
 
 Sẽ tạo visualization của:
+
 - Input mesh
 - SDF representation
 - Sparse wavelet coefficients
@@ -121,6 +123,7 @@ Sẽ tạo visualization của:
 ### Để Train Model:
 
 Xem **[ROADMAP.md](ROADMAP.md)** để biết:
+
 - Cách implement dataset loader
 - Training loop hoàn chỉnh
 - Evaluation metrics
@@ -147,7 +150,7 @@ diffusion = GaussianDiffusion(timesteps=1000)
 for batch in loader:
     # Encode conditioning
     conditioning = encoder(batch['images'], batch['poses'])
-    
+
     # Diffusion forward
     loss = diffusion(batch['coeffs'], context=conditioning)
     loss.backward()
@@ -159,23 +162,27 @@ for batch in loader:
 ## Common Issues
 
 ### "ModuleNotFoundError: No module named 'pywt'"
+
 ```bash
 pip install PyWavelets
 ```
 
 ### "transformers not available"
+
 ```bash
 pip install transformers huggingface_hub
 # Hoặc code sẽ tự động dùng fallback CNN
 ```
 
 ### "CUDA out of memory"
+
 ```bash
 # Giảm batch size hoặc resolution
 python train.py --batch_size 2 --resolution 16
 ```
 
 ### "Rendering fails on headless server"
+
 ```bash
 export PYOPENGL_PLATFORM=osmesa
 pip install osmesa
@@ -203,11 +210,11 @@ huggingface-cli login
 
 ### Expected Performance:
 
-| Setup | Resolution | Time/Epoch | Hardware |
-|-------|-----------|-----------|----------|
-| CPU | 32³ | ~30 min | i7 |
-| GPU Dense | 32³ | ~5 min | RTX 3080 |
-| GPU Sparse | 32³ | ~2 min | RTX 3080 + spconv |
+| Setup      | Resolution | Time/Epoch | Hardware          |
+| ---------- | ---------- | ---------- | ----------------- |
+| CPU        | 32³        | ~30 min    | i7                |
+| GPU Dense  | 32³        | ~5 min     | RTX 3080          |
+| GPU Sparse | 32³        | ~2 min     | RTX 3080 + spconv |
 
 ---
 
