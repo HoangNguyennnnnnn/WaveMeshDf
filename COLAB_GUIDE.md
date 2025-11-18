@@ -2,6 +2,13 @@
 
 This guide will help you run the complete WaveMesh-Diff pipeline on Google Colab, including all modules (A, B, C).
 
+**⚡ Quick Fix for Common Issues:**
+
+- **spconv compilation errors?** → Use `--no-build-isolation` flag (already in setup below)
+- **rtree missing?** → Install with `pip install rtree` (already included below)
+- **Private repo clone fails?** → Add `GH_TOKEN` to Colab secrets (see Step 0)
+- **CUDA 12.5 compatibility?** → Use `spconv-cu118` (forward compatible, included below)
+
 ---
 
 ## 📋 Quick Start (Copy-Paste Ready)
@@ -58,6 +65,10 @@ os.environ['PYOPENGL_PLATFORM'] = 'egl'
 print("📦 Installing core dependencies...")
 !pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision
 
+# 2.5. Install rtree (required for trimesh SDF computation)
+print("📦 Installing spatial indexing (rtree)...")
+!pip install -q rtree
+
 # 3. Detect CUDA version and install matching spconv
 print("\n🔍 Detecting CUDA version...")
 try:
@@ -68,20 +79,21 @@ try:
     if 'release 12.5' in cuda_version or 'release 12.4' in cuda_version or 'release 12.3' in cuda_version:
         print("📥 Installing spconv for CUDA 12.x (using cu118 - compatible)...")
         print("ℹ️  Note: spconv-cu118 works with CUDA 12.x in most cases")
-        !pip install -q spconv-cu118
+        # Install with --no-build-isolation to avoid compilation issues
+        !pip install -q --no-build-isolation spconv-cu118
     elif 'release 12.1' in cuda_version or 'release 12.0' in cuda_version:
         print("📥 Installing spconv for CUDA 12.0/12.1...")
-        !pip install -q spconv-cu121
+        !pip install -q --no-build-isolation spconv-cu121
     elif 'release 11.8' in cuda_version:
         print("📥 Installing spconv for CUDA 11.8...")
-        !pip install -q spconv-cu118
+        !pip install -q --no-build-isolation spconv-cu118
     else:
         print("⚠️  Unknown CUDA version, trying spconv-cu118...")
-        !pip install -q spconv-cu118
+        !pip install -q --no-build-isolation spconv-cu118
 except Exception as e:
     print(f"⚠️  Could not detect CUDA: {e}")
     print("Installing spconv-cu118 as default...")
-    !pip install -q spconv-cu118
+    !pip install -q --no-build-isolation spconv-cu118
 
 # 4. Install additional utilities
 print("\n📦 Installing additional utilities...")
@@ -554,7 +566,49 @@ print(f"PyTorch CUDA: {torch.version.cuda}")
 
 **Why this works:** spconv builds are forward-compatible. The cu118 build works with CUDA 12.x because the core CUDA APIs haven't changed significantly.
 
-### Issue 3: Out of Memory
+### Issue 2b: spconv compilation errors (ninja build failed)
+
+**Error:** `ninja: build stopped: subcommand failed` or `fatal error: tensorview/pybind_utils.h: No such file or directory`
+
+**Solution:** Install with `--no-build-isolation` flag to use pre-built wheels:
+
+```python
+# Uninstall any partial installation
+!pip uninstall -y spconv-cu118 spconv-cu121
+
+# Reinstall with --no-build-isolation to avoid compilation
+!pip install --no-build-isolation spconv-cu118
+
+# If that still fails, try installing dependencies first
+!pip install cumm-cu118
+!pip install --no-build-isolation spconv-cu118
+
+# Verify
+import spconv.pytorch as spconv
+print("✅ spconv installed successfully!")
+```
+
+### Issue 3: Missing rtree module
+
+**Error:** `ModuleNotFoundError: No module named 'rtree'`
+
+**This error occurs when:** trimesh tries to compute SDF using spatial indexing
+
+**Solution:**
+
+```python
+# Install rtree (spatial indexing library)
+!pip install rtree
+
+# Verify
+import rtree
+print("✅ rtree installed successfully!")
+
+# Now test the pipeline again
+!python tests/test_wavelet_pipeline.py --create-test-mesh --resolution 64
+```
+
+### Issue 4: Out of Memory
 
 ```python
 # Use smaller resolution
@@ -565,17 +619,17 @@ import torch
 torch.cuda.empty_cache()
 ```
 
-### Issue 4: Import errors
+### Issue 5: Import errors
 
 ```python
 # Reinstall dependencies
-!pip install --upgrade PyWavelets trimesh scikit-image scipy numpy
+!pip install --upgrade PyWavelets trimesh scikit-image scipy numpy rtree
 
 # Verify
 !python -c "import pywt; import trimesh; print('✓ Imports OK')"
 ```
 
-### Issue 5: verify_installation.py not found
+### Issue 6: verify_installation.py not found
 
 **Error:** `python3: can't open file '/content/verify_installation.py': [Errno 2] No such file or directory`
 
@@ -609,7 +663,7 @@ if not os.path.exists('WaveMeshDf'):
     %cd WaveMeshDf
 ```
 
-### Issue 6: Display/OpenGL errors
+### Issue 7: Display/OpenGL errors
 
 ```python
 # This is normal in Colab - the code handles it automatically
@@ -648,7 +702,7 @@ import subprocess
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
 print("📦 Installing dependencies...")
-!pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision tqdm pyyaml einops
+!pip install -q PyWavelets trimesh scikit-image scipy numpy torch torchvision tqdm pyyaml einops rtree
 
 # Auto-detect CUDA version and install matching spconv
 print("\n🔍 Detecting CUDA version...")
@@ -659,16 +713,14 @@ try:
     # spconv-cu118 works with CUDA 12.x (forward compatible)
     if 'release 12.' in cuda_version:
         print("ℹ️  Using spconv-cu118 (compatible with CUDA 12.x)")
-        !pip install -q spconv-cu118
+        !pip install -q --no-build-isolation spconv-cu118
     elif 'release 11.8' in cuda_version:
-        !pip install -q spconv-cu118
+        !pip install -q --no-build-isolation spconv-cu118
     else:
-        !pip install -q spconv-cu118
+        !pip install -q --no-build-isolation spconv-cu118
 except:
     print("⚠️  CUDA detection failed, using spconv-cu118 as default")
-    !pip install -q spconv-cu118
-
-# Clone repository with authentication
+    !pip install -q --no-build-isolation spconv-cu118# Clone repository with authentication
 print("\n📥 Cloning repository...")
 try:
     from google.colab import userdata
