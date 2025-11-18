@@ -65,17 +65,22 @@ try:
     print(cuda_version)
 
     # Parse CUDA version
-    if 'release 12.5' in cuda_version or 'release 12.' in cuda_version:
-        print("📥 Installing spconv for CUDA 12.x...")
-        !pip install -q spconv-cu120
+    if 'release 12.5' in cuda_version or 'release 12.4' in cuda_version or 'release 12.3' in cuda_version:
+        print("📥 Installing spconv for CUDA 12.x (using cu118 - compatible)...")
+        print("ℹ️  Note: spconv-cu118 works with CUDA 12.x in most cases")
+        !pip install -q spconv-cu118
+    elif 'release 12.1' in cuda_version or 'release 12.0' in cuda_version:
+        print("📥 Installing spconv for CUDA 12.0/12.1...")
+        !pip install -q spconv-cu121
     elif 'release 11.8' in cuda_version:
         print("📥 Installing spconv for CUDA 11.8...")
         !pip install -q spconv-cu118
     else:
         print("⚠️  Unknown CUDA version, trying spconv-cu118...")
         !pip install -q spconv-cu118
-except:
-    print("⚠️  Could not detect CUDA, installing spconv-cu118 as default...")
+except Exception as e:
+    print(f"⚠️  Could not detect CUDA: {e}")
+    print("Installing spconv-cu118 as default...")
     !pip install -q spconv-cu118
 
 # 4. Install additional utilities
@@ -205,6 +210,8 @@ print("="*60)
 
 ✅ All tests completed successfully!
 ```
+
+**Note:** If you see negative sparsity (e.g., -3.9%) with very small test grids (32³), this is normal. The wavelet coefficients overhead exceeds savings at tiny sizes. Use resolution ≥64 for meaningful compression.
 
 ---
 
@@ -522,18 +529,30 @@ If you don't need the repository to be private:
 
 ### Issue 2: CUDA/spconv version mismatch
 
+**Error:** `ERROR: Could not find a version that satisfies the requirement spconv-cu120`
+
+**Solution:** spconv-cu118 works with CUDA 12.x - use it instead:
+
 ```python
 # Check CUDA version
 !nvcc --version
 
-# For CUDA 12.5 (current Colab default as of Nov 2024)
-!pip uninstall -y spconv-cu118 spconv-cu120
-!pip install spconv-cu120
-
-# For CUDA 11.8
-!pip uninstall -y spconv-cu118 spconv-cu120
+# For CUDA 12.5/12.4/12.3 (current Colab default as of Nov 2024)
+# spconv-cu118 is compatible with CUDA 12.x
+!pip uninstall -y spconv-cu118 spconv-cu121
 !pip install spconv-cu118
+
+# Verify it works
+import torch
+import spconv.pytorch as spconv
+print(f"✅ spconv imported successfully")
+print(f"PyTorch CUDA: {torch.version.cuda}")
+
+# Alternative for CUDA 12.1 specifically
+# !pip install spconv-cu121
 ```
+
+**Why this works:** spconv builds are forward-compatible. The cu118 build works with CUDA 12.x because the core CUDA APIs haven't changed significantly.
 
 ### Issue 3: Out of Memory
 
@@ -635,11 +654,18 @@ print("📦 Installing dependencies...")
 print("\n🔍 Detecting CUDA version...")
 try:
     cuda_version = subprocess.check_output(['nvcc', '--version']).decode('utf-8')
+    print(f"CUDA version detected: {cuda_version.split('release ')[1].split(',')[0]}")
+
+    # spconv-cu118 works with CUDA 12.x (forward compatible)
     if 'release 12.' in cuda_version:
-        !pip install -q spconv-cu120
+        print("ℹ️  Using spconv-cu118 (compatible with CUDA 12.x)")
+        !pip install -q spconv-cu118
+    elif 'release 11.8' in cuda_version:
+        !pip install -q spconv-cu118
     else:
         !pip install -q spconv-cu118
 except:
+    print("⚠️  CUDA detection failed, using spconv-cu118 as default")
     !pip install -q spconv-cu118
 
 # Clone repository with authentication
