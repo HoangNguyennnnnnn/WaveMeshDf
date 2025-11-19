@@ -463,7 +463,8 @@ def create_dataloader(
         shuffle=(split == 'train'),
         num_workers=num_workers,
         collate_fn=collate_sparse,
-        pin_memory=True
+        pin_memory=True,
+        persistent_workers=(num_workers > 0)  # Only if using workers (avoids error when num_workers=0)
     )
     
     return dataloader

@@ -63,7 +63,7 @@ def parse_args():
     parser.add_argument('--val_freq', type=int, default=1, help='Validate every N epochs')
     
     # Hardware
-    parser.add_argument('--num_workers', type=int, default=4)
+    parser.add_argument('--num_workers', type=int, default=0, help='Data loading workers (use 0 for Colab)')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--mixed_precision', action='store_true')
     
@@ -283,6 +283,18 @@ def main():
     
     # Create dataloaders
     logger.info("Creating datasets...")
+    
+    # Auto-detect memory constraints (Colab has ~12GB RAM)
+    if args.num_workers > 0:
+        try:
+            import psutil
+            available_ram_gb = psutil.virtual_memory().available / (1024**3)
+            if available_ram_gb < 8:
+                logger.warning(f"Low RAM detected ({available_ram_gb:.1f}GB). Setting num_workers=0 to avoid OOM.")
+                args.num_workers = 0
+        except ImportError:
+            pass
+    
     train_loader = create_dataloader(
         dataset_name=args.dataset,
         root_dir=args.data_root,

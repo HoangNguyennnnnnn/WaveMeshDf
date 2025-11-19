@@ -1,6 +1,6 @@
 # WaveMesh-Diff
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb) ← **NEW: Simple, no errors!**
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb) ← **NEW: Memory-optimized, no OOM errors!**
 
 **3D Mesh Generation using Diffusion Models in Wavelet Domain**
 
@@ -8,12 +8,20 @@ Phát sinh 3D mesh từ multi-view images sử dụng diffusion models trên spa
 
 > **🚀 Quick Start:**
 >
-> - **[Minimal Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb)** - Gọn, chạy ngay không lỗi (5-10 phút)
+> - **[Minimal Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb)** - Gọn, chạy ngay không lỗi (5-10 phút) ⭐
 > - **[Full Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)** - Đầy đủ demos, visualizations (15-20 phút)
 >
-> **⚡ Performance Tip:** Enable GPU in Colab (Runtime → Change runtime type → T4 GPU) for 10-50x faster execution!
+> **⚡ NEW: Memory Fix!** Training now works on Colab free tier (12GB RAM)
 >
-> **📖 Colab Help:** See [COLAB_SETUP.md](COLAB_SETUP.md) for GPU setup, memory optimization, and troubleshooting
+> - Fixed `DataLoader worker killed` error
+> - Auto RAM detection + optimal settings
+> - Use `train_colab.py` for automatic optimization
+>
+> **📖 Documentation:**
+>
+> - [MEMORY_FIX.md](MEMORY_FIX.md) - What was fixed and how
+> - [COLAB_SETUP.md](COLAB_SETUP.md) - GPU setup & troubleshooting
+> - [NOTEBOOK_GUIDE.md](NOTEBOOK_GUIDE.md) - Which notebook to use?
 
 ---
 

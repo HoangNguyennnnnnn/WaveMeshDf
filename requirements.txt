@@ -31,6 +31,7 @@ pillow>=9.5.0              # Image loading
 pyyaml>=6.0                # Configuration files
 tqdm>=4.65.0               # Progress bars
 einops>=0.6.1              # Tensor operations
+psutil>=5.9.0              # System resource monitoring (RAM/CPU detection)
 
 # Training & Logging (Optional)
 wandb>=0.15.0              # Experiment tracking (optional)

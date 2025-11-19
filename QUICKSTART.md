@@ -1,6 +1,30 @@
-# 🚀 Quick Start - WaveMesh-Diff
+# 🚀 Quick Start - WaveMesh-Diff (Updated for Memory Fix)
 
-Bắt đầu sử dụng WaveMesh-Diff trong 30 phút.
+Bắt đầu sử dụng WaveMesh-Diff trong 10-30 phút.
+
+---
+
+## ⚡ NEW: Memory-Optimized Training
+
+**🔥 Lỗi OOM đã được fix!** Dùng lệnh mới này:
+
+```bash
+# In Colab - Auto-optimized, no crashes!
+!python train_colab.py --mode debug  # 5 minutes, 20 samples ✅
+
+# Options:
+# --mode debug : 5 phút, test nhanh (khuyên dùng!)
+# --mode quick : 15 phút, 100 samples
+# --mode full  : 3 giờ, full training
+```
+
+**What changed?**
+
+- ✅ Fixed `DataLoader worker killed` error
+- ✅ Auto RAM detection (works on Colab free tier)
+- ✅ Optimal settings for 12GB RAM
+
+**Details:** See [MEMORY_FIX.md](MEMORY_FIX.md)
 
 ---
 
