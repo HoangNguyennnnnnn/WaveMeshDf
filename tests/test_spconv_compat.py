@@ -1,7 +1,11 @@
-"""
+""" 
 Test spconv compatibility layer
 Verifies that dense fallback mode works correctly
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
 import numpy as np

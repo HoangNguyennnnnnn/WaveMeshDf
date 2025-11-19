@@ -3,7 +3,8 @@ Test All Modules - WaveMesh-Diff
 Comprehensive test cho tất cả 4 modules (A, B, C, D)
 """
 import sys
-sys.path.insert(0, '.')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Fix encoding for Windows console
 import io

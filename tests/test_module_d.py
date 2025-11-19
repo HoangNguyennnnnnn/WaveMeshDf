@@ -1,9 +1,10 @@
-"""
+""" 
 Test Module D - MultiView Encoder
 Test các thành phần của encoder đa góc nhìn
 """
 import sys
-sys.path.insert(0, '.')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Fix encoding for Windows console
 import io

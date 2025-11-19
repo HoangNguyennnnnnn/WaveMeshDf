@@ -11,14 +11,12 @@ Phát sinh 3D mesh từ multi-view images sử dụng diffusion models trên spa
 > - **[Minimal Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb)** - Simple demo, 5-10 phút ⭐
 > - **[Full Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)** - Complete features, 15-20 phút
 >
-> **📖 Documentation:** → See [docs/DOCS.md](docs/DOCS.md) for full index
+> **📖 Documentation:** → See [DOCS.md](DOCS.md) for full index
 >
-> - [docs/QUICKSTART.md](docs/QUICKSTART.md) - Getting started guide
-> - [docs/COLAB_SETUP.md](docs/COLAB_SETUP.md) - Colab GPU setup & which notebook to use
-> - [docs/TRAINING.md](docs/TRAINING.md) - Training guide with command examples
-> - [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues & solutions
->
-> **📂 Project Structure:** → See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for directory organization
+> - [QUICKSTART.md](QUICKSTART.md) - Getting started guide
+> - [COLAB_SETUP.md](COLAB_SETUP.md) - Colab GPU setup & which notebook to use
+> - [TRAINING.md](TRAINING.md) - Training guide with command examples
+> - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues & solutions
 
 ---
 

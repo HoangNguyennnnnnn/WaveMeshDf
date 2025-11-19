@@ -1,6 +1,10 @@
-"""
+""" 
 Test data loading and conversion to dense tensor
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
 from data.mesh_dataset import create_dataloader

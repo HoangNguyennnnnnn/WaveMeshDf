@@ -6,6 +6,10 @@ Automatically detects memory constraints and adjusts settings
 import subprocess
 import sys
 import os
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 def get_system_info():

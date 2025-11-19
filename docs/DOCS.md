@@ -2,7 +2,7 @@
 
 ## 🚀 Getting Started
 
-- **[README.md](README.md)** - Main overview, quick links
+- **[README.md](../README.md)** - Main overview, quick links (in root folder)
 - **[QUICKSTART.md](QUICKSTART.md)** - Installation & first steps
 - **[COLAB_SETUP.md](COLAB_SETUP.md)** - Google Colab guide, which notebook to use
 

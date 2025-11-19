@@ -2,6 +2,10 @@
 Quick demo: Show improvement in wavelet reconstruction quality
 """
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import numpy as np
 from data.wavelet_utils import mesh_to_sdf_simple, sdf_to_sparse_wavelet, sparse_wavelet_to_sdf
 import trimesh
