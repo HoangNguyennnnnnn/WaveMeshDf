@@ -56,39 +56,29 @@ class WaveletTransform3D:
         assert sdf_grid.ndim == 3, f"Expected 3D input, got shape {sdf_grid.shape}"
         original_shape = sdf_grid.shape
         
-        # Perform 3D Discrete Wavelet Transform
-        # dwtn returns a dictionary with keys like 'aaa', 'aad', 'ada', etc.
-        # where 'a' = approximation, 'd' = detail for each dimension
-        coeffs = pywt.dwtn(sdf_grid, wavelet=self.wavelet, mode='periodization')
-        
-        # Find the approximation key (usually 'aaa' but check what's available)
-        approx_key = 'a' * 3  # 'aaa' for 3D
-        if approx_key not in coeffs:
-            # Try to find any key with all 'a's
-            approx_keys = [k for k in coeffs.keys() if k.count('a') == 3]
-            if approx_keys:
-                approx_key = approx_keys[0]
-            else:
-                # Fallback: use first key as approximation
-                approx_key = list(coeffs.keys())[0]
-        
-        # Multi-level decomposition
-        all_coeffs_levels = [coeffs]  # Store coefficients from each level
-        
-        for i in range(1, self.level):
-            # Further decompose the approximation coefficients
-            if approx_key in coeffs:
-                approx = coeffs[approx_key]
-                coeffs_next = pywt.dwtn(approx, wavelet=self.wavelet, mode='periodization')
-                
-                # Store level info
-                all_coeffs_levels.append(coeffs_next)
-                
-                # Update coeffs dictionary
-                coeffs = coeffs_next
-            else:
-                # Can't decompose further
-                break
+        # For multi-level DWT, we use wavedecn instead of manual iteration
+        # This handles the multilevel structure correctly
+        if self.level > 1:
+            # Use wavedecn for proper multi-level decomposition
+            coeffs_multilevel = pywt.wavedecn(sdf_grid, wavelet=self.wavelet, level=self.level, mode='periodization')
+            # coeffs_multilevel is a list: [approx, {details_level_1}, {details_level_2}, ...]
+            approx = coeffs_multilevel[0]  # Approximation at coarsest level
+            details_levels = coeffs_multilevel[1:]  # List of detail coefficient dicts
+            
+            # Reconstruct the format for sparse conversion
+            # We'll store all coefficients in a flat structure with level info
+            all_coeffs_levels = []
+            
+            # Add coarsest approximation as a level
+            all_coeffs_levels.append({'aaa': approx})
+            
+            # Add detail levels (from coarsest to finest)
+            for detail_dict in details_levels:
+                all_coeffs_levels.append(detail_dict)
+        else:
+            # Single level decomposition
+            coeffs = pywt.dwtn(sdf_grid, wavelet=self.wavelet, mode='periodization')
+            all_coeffs_levels = [coeffs]
         
         # Flatten all coefficient sub-bands into a single representation
         # Each sub-band becomes a channel in our sparse representation
@@ -185,7 +175,8 @@ class WaveletTransform3D:
         self,
         sparse_data: Dict,
         denoise: bool = False,
-        residual_correction: bool = False
+        residual_correction: bool = False,
+        verbose: bool = False
     ) -> np.ndarray:
         """
         Reconstruct dense SDF grid from sparse wavelet representation.
@@ -195,10 +186,18 @@ class WaveletTransform3D:
             denoise: Whether to apply light denoising after reconstruction (reduces quality)
             residual_correction: Whether to apply residual correction using original SDF
                                Only works if original_sdf is stored in sparse_data
+            verbose: Print debug information
             
         Returns:
             Reconstructed dense SDF grid
         """
+        if verbose:
+            print(f"Reconstruction config:")
+            print(f"  - Wavelet: {sparse_data['wavelet']}")
+            print(f"  - Levels: {sparse_data['level']}")
+            print(f"  - Target shape: {sparse_data['shape']}")
+            print(f"  - Sparse features: {len(sparse_data['features'])}")
+        
         # Convert torch tensors to numpy if needed
         indices = sparse_data['indices']
         features = sparse_data['features']
@@ -212,12 +211,18 @@ class WaveletTransform3D:
         coeffs_levels = sparse_data['coeffs_levels']
         channel_info = sparse_data['channel_info']
         
+        if verbose:
+            print(f"  - Coefficient levels: {len(coeffs_levels)}")
+            print(f"  - Channels: {len(channel_info)}")
+        
         # Initialize empty coefficient arrays for all levels
         reconstructed_levels = []
-        for level_coeffs in coeffs_levels:
+        for level_idx, level_coeffs in enumerate(coeffs_levels):
             level_dict = {}
             for key, coeff_array in level_coeffs.items():
                 level_dict[key] = np.zeros_like(coeff_array, dtype=np.float32)
+                if verbose:
+                    print(f"  - Level {level_idx}, key '{key}': shape {coeff_array.shape}")
             reconstructed_levels.append(level_dict)
         
         # Fill in the sparse values
@@ -230,30 +235,50 @@ class WaveletTransform3D:
             channel_indices = indices[channel_mask][:, :3]  # Remove channel dimension
             channel_values = features[channel_mask].flatten()
             
-            # Place values back into dense array
+            # Place values back into dense array with bounds checking
+            target_array = reconstructed_levels[level_idx][key]
             for (x, y, z), val in zip(channel_indices, channel_values):
-                reconstructed_levels[level_idx][key][x, y, z] = val
+                # Ensure indices are within bounds
+                if 0 <= x < target_array.shape[0] and \
+                   0 <= y < target_array.shape[1] and \
+                   0 <= z < target_array.shape[2]:
+                    target_array[x, y, z] = val
         
         # Perform inverse multi-level DWT
-        # Start from the deepest level and work backwards
+        # Reconstruct using wavedecn structure if multi-level
         num_levels = len(reconstructed_levels)
         
-        # Start with the deepest level (last in list)
-        current_approx = None
-        
-        for level_idx in range(num_levels - 1, -1, -1):
-            level_coeffs = reconstructed_levels[level_idx]
+        if self.level > 1:
+            # Use waverecn for proper multi-level reconstruction
+            # Format: [approx, {details_level_n-1}, ..., {details_level_1}, {details_level_0}]
+            coeffs_for_recon = []
             
-            if current_approx is not None:
-                # Replace the approximation with the one from deeper level
-                approx_key = 'a' * 3  # 'aaa'
-                if approx_key in level_coeffs:
-                    level_coeffs[approx_key] = current_approx
+            # First element is the approximation from coarsest level (level 0)
+            approx_key = 'aaa'
+            if approx_key in reconstructed_levels[0]:
+                coeffs_for_recon.append(reconstructed_levels[0][approx_key])
+            else:
+                # Use first available key
+                first_key = list(reconstructed_levels[0].keys())[0]
+                coeffs_for_recon.append(reconstructed_levels[0][first_key])
             
-            # Perform inverse DWT for this level
-            current_approx = pywt.idwtn(level_coeffs, wavelet=self.wavelet, mode='periodization')
+            # Then add detail levels in order (from coarsest to finest)
+            for level_idx in range(1, num_levels):
+                # Remove the 'aaa' key if present (it's handled separately)
+                detail_dict = {k: v for k, v in reconstructed_levels[level_idx].items() if k != 'aaa'}
+                coeffs_for_recon.append(detail_dict)
+            
+            # Perform inverse multi-level wavelet transform
+            try:
+                reconstructed_sdf = pywt.waverecn(coeffs_for_recon, wavelet=self.wavelet, mode='periodization')
+            except Exception as e:
+                print(f"Warning: waverecn failed: {e}")
+                # Fall back to single-level reconstruction
+                reconstructed_sdf = pywt.idwtn(reconstructed_levels[0], wavelet=self.wavelet, mode='periodization')
+        else:
+            # Single level - use idwtn
+            reconstructed_sdf = pywt.idwtn(reconstructed_levels[0], wavelet=self.wavelet, mode='periodization')
         
-        reconstructed_sdf = current_approx
         
         # Ensure correct shape
         target_shape = sparse_data['shape']
@@ -585,7 +610,8 @@ def sparse_wavelet_to_sdf(
     sparse_data: Dict,
     resolution: int = None,
     denoise: bool = False,
-    residual_correction: bool = False
+    residual_correction: bool = False,
+    verbose: bool = False
 ) -> np.ndarray:
     """
     Convenience function: sparse wavelet -> reconstructed SDF grid.
@@ -595,6 +621,7 @@ def sparse_wavelet_to_sdf(
         resolution: Target resolution (None = use original)
         denoise: Whether to apply denoising (reduces quality, use only if needed)
         residual_correction: Apply residual correction for better quality (if original available)
+        verbose: Print reconstruction debug info
         
     Returns:
         Reconstructed dense SDF grid
@@ -606,7 +633,8 @@ def sparse_wavelet_to_sdf(
     return transformer.sparse_to_dense_wavelet(
         sparse_data, 
         denoise=denoise,
-        residual_correction=residual_correction
+        residual_correction=residual_correction,
+        verbose=verbose
     )
 
 

@@ -13,7 +13,6 @@ Phát sinh 3D mesh từ multi-view images sử dụng diffusion models trên spa
 >
 > **📖 Documentation:** → See [docs/DOCS.md](docs/DOCS.md) for full index
 >
-> - [docs/QUICKSTART.md](docs/QUICKSTART.md) - Getting started guide
 > - [docs/COLAB_SETUP.md](docs/COLAB_SETUP.md) - Colab GPU setup & which notebook to use
 > - [docs/TRAINING.md](docs/TRAINING.md) - Training guide with command examples
 > - [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues & solutions
@@ -56,7 +55,7 @@ pip install -r requirements.txt
 pip install transformers huggingface_hub
 ```
 
-**📖 Xem [QUICKSTART.md](QUICKSTART.md) hoặc [TROUBLESHOOTING.md](TROUBLESHOOTING.md) nếu gặp vấn đề.**
+**📖 Xem [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) nếu gặp vấn đề.**
 
 ### 2. Test Installation
 
@@ -88,7 +87,7 @@ python generate.py \
     --output_dir generated_meshes
 ```
 
-**📖 Xem [QUICKSTART.md](QUICKSTART.md) và [TRAINING.md](TRAINING.md) để biết chi tiết.**
+**📖 Xem [TRAINING.md](docs/TRAINING.md) để biết chi tiết.**
 
 ---
 
@@ -333,7 +332,7 @@ python train.py --batch_size 2 --resolution 16
 ## 📚 Documentation
 
 - **[README.md](README.md)** - Project overview (file này)
-- **[QUICKSTART.md](QUICKSTART.md)** - Bắt đầu trong 30 phút
+- **[README.md](README.md)** - Bắt đầu trong 30 phút
 - **[ROADMAP.md](ROADMAP.md)** - Lộ trình training & improvement
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Chi tiết kỹ thuật
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Giải quyết lỗi
@@ -367,7 +366,7 @@ python train.py --batch_size 2 --resolution 16
 
 ## 📚 Documentation
 
-- 🚀 **[QUICKSTART.md](QUICKSTART.md)** - Setup & quick demos (30 minutes)
+- 🚀 **[README.md](README.md)** - Setup & quick demos (30 minutes)
 - ⚡ **[COLAB_SETUP.md](COLAB_SETUP.md)** - Google Colab setup & GPU optimization
 - 🏋️ **[TRAINING.md](TRAINING.md)** - Complete training guide
 - 🐛 **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Debug & fix errors
