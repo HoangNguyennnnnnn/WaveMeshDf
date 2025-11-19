@@ -29,7 +29,9 @@ class WaveletTransform3D:
         self, 
         sdf_grid: np.ndarray, 
         threshold: float = 0.01,
-        return_torch: bool = True
+        return_torch: bool = True,
+        adaptive_threshold: bool = True,
+        keep_approximation: bool = True
     ) -> Dict[str, np.ndarray]:
         """
         Convert dense SDF grid to sparse wavelet representation.
@@ -37,7 +39,11 @@ class WaveletTransform3D:
         Args:
             sdf_grid: Dense 3D SDF array of shape (D, H, W)
             threshold: Magnitude threshold for sparsification (coeffs below this are zeroed)
+                      Set to 0.0 for lossless compression (no thresholding)
             return_torch: If True, return torch tensors instead of numpy arrays
+            adaptive_threshold: If True, use different thresholds for approx vs detail coefficients
+                              Approximation coeffs use threshold/10 (preserve more)
+            keep_approximation: If True, always keep all approximation coefficients (recommended)
             
         Returns:
             Dictionary containing:
@@ -93,8 +99,24 @@ class WaveletTransform3D:
         # Process all levels
         for level_idx, level_coeffs in enumerate(all_coeffs_levels):
             for key, coeff_array in sorted(level_coeffs.items()):
+                # Determine threshold for this coefficient type
+                is_approximation = key.count('a') == 3  # 'aaa' is approximation
+                
+                if threshold == 0.0:
+                    # Lossless mode - keep all coefficients
+                    current_threshold = 0.0
+                elif keep_approximation and is_approximation:
+                    # Keep all approximation coefficients (critical for reconstruction)
+                    current_threshold = 0.0
+                elif adaptive_threshold and is_approximation:
+                    # Use lower threshold for approximation (preserve more)
+                    current_threshold = threshold / 10.0
+                else:
+                    # Use standard threshold for detail coefficients
+                    current_threshold = threshold
+                
                 # Apply threshold - sparsify
-                mask = np.abs(coeff_array) > threshold
+                mask = np.abs(coeff_array) > current_threshold
                 
                 if np.any(mask):
                     # Get coordinates where coefficients exceed threshold
@@ -107,7 +129,9 @@ class WaveletTransform3D:
                         'key': key,
                         'level': level_idx,
                         'shape': coeff_array.shape,
-                        'count': len(values)
+                        'count': len(values),
+                        'threshold': current_threshold,
+                        'is_approximation': is_approximation
                     })
         
         # Concatenate all sparse coefficients
@@ -144,7 +168,10 @@ class WaveletTransform3D:
             'wavelet': self.wavelet,
             'coeffs_levels': all_coeffs_levels,  # Keep all levels for reconstruction
             'channel_info': channel_info,
-            'threshold': threshold
+            'threshold': threshold,
+            'adaptive_threshold': adaptive_threshold,
+            'keep_approximation': keep_approximation,
+            'original_sdf': sdf_grid  # Store original for residual correction (optional)
         }
         
         # Convert to PyTorch tensors if requested
@@ -157,14 +184,17 @@ class WaveletTransform3D:
     def sparse_to_dense_wavelet(
         self,
         sparse_data: Dict,
-        denoise: bool = True
+        denoise: bool = False,
+        residual_correction: bool = False
     ) -> np.ndarray:
         """
         Reconstruct dense SDF grid from sparse wavelet representation.
         
         Args:
             sparse_data: Dictionary from dense_to_sparse_wavelet
-            denoise: Whether to apply light denoising after reconstruction
+            denoise: Whether to apply light denoising after reconstruction (reduces quality)
+            residual_correction: Whether to apply residual correction using original SDF
+                               Only works if original_sdf is stored in sparse_data
             
         Returns:
             Reconstructed dense SDF grid
@@ -231,7 +261,16 @@ class WaveletTransform3D:
             # Crop or pad to match original shape
             reconstructed_sdf = self._match_shape(reconstructed_sdf, target_shape)
         
-        # Optional denoising (simple median filter)
+        # Optional residual correction (improves quality if original is available)
+        if residual_correction and 'original_sdf' in sparse_data:
+            original_sdf = sparse_data['original_sdf']
+            # Compute residual error
+            residual = original_sdf - reconstructed_sdf
+            # Apply soft correction (reduce residual magnitude to avoid overcorrection)
+            correction_strength = 0.5
+            reconstructed_sdf = reconstructed_sdf + correction_strength * residual
+        
+        # Optional denoising (simple median filter) - WARNING: reduces quality
         if denoise:
             from scipy.ndimage import median_filter
             reconstructed_sdf = median_filter(reconstructed_sdf, size=3)
@@ -396,7 +435,8 @@ def sdf_to_mesh(
 def sparse_to_mesh(
     sparse_data: Dict,
     level: float = 0.0,
-    denoise: bool = True
+    denoise: bool = False,
+    residual_correction: bool = False
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Complete pipeline: sparse wavelet coefficients -> dense SDF -> mesh.
@@ -404,7 +444,8 @@ def sparse_to_mesh(
     Args:
         sparse_data: Dictionary from dense_to_sparse_wavelet
         level: Iso-surface level for marching cubes
-        denoise: Whether to denoise during reconstruction
+        denoise: Whether to denoise during reconstruction (reduces quality)
+        residual_correction: Apply residual correction for better quality
         
     Returns:
         vertices: (V, 3) array
@@ -416,8 +457,12 @@ def sparse_to_mesh(
         level=sparse_data['level']
     )
     
-    # Reconstruct SDF
-    sdf_grid = transformer.sparse_to_dense_wavelet(sparse_data, denoise=denoise)
+    # Reconstruct SDF with improved quality
+    sdf_grid = transformer.sparse_to_dense_wavelet(
+        sparse_data, 
+        denoise=denoise,
+        residual_correction=residual_correction
+    )
     
     # Extract mesh
     vertices, faces = sdf_to_mesh(sdf_grid, level=level)
@@ -503,28 +548,44 @@ def sdf_to_sparse_wavelet(
     sdf_grid: np.ndarray, 
     threshold: float = 0.01,
     wavelet: str = 'bior4.4',
-    level: int = 3
+    level: int = 3,
+    adaptive_threshold: bool = True,
+    keep_approximation: bool = True,
+    lossless: bool = False
 ) -> Dict:
     """
     Convenience function: SDF grid -> sparse wavelet representation.
     
     Args:
         sdf_grid: Dense SDF array
-        threshold: Sparsification threshold
+        threshold: Sparsification threshold (ignored if lossless=True)
         wavelet: Wavelet type
         level: Decomposition level
+        adaptive_threshold: Use adaptive thresholding (recommended)
+        keep_approximation: Always keep approximation coefficients (recommended)
+        lossless: If True, no thresholding (perfect reconstruction, but less sparse)
         
     Returns:
         Sparse wavelet dictionary
     """
+    if lossless:
+        threshold = 0.0
+    
     transformer = WaveletTransform3D(wavelet=wavelet, level=level)
-    return transformer.dense_to_sparse_wavelet(sdf_grid, threshold=threshold, return_torch=False)
+    return transformer.dense_to_sparse_wavelet(
+        sdf_grid, 
+        threshold=threshold, 
+        return_torch=False,
+        adaptive_threshold=adaptive_threshold,
+        keep_approximation=keep_approximation
+    )
 
 
 def sparse_wavelet_to_sdf(
     sparse_data: Dict,
     resolution: int = None,
-    denoise: bool = True
+    denoise: bool = False,
+    residual_correction: bool = False
 ) -> np.ndarray:
     """
     Convenience function: sparse wavelet -> reconstructed SDF grid.
@@ -532,7 +593,8 @@ def sparse_wavelet_to_sdf(
     Args:
         sparse_data: Dictionary from sdf_to_sparse_wavelet
         resolution: Target resolution (None = use original)
-        denoise: Whether to apply denoising
+        denoise: Whether to apply denoising (reduces quality, use only if needed)
+        residual_correction: Apply residual correction for better quality (if original available)
         
     Returns:
         Reconstructed dense SDF grid
@@ -541,7 +603,11 @@ def sparse_wavelet_to_sdf(
         wavelet=sparse_data['wavelet'],
         level=sparse_data['level']
     )
-    return transformer.sparse_to_dense_wavelet(sparse_data, denoise=denoise)
+    return transformer.sparse_to_dense_wavelet(
+        sparse_data, 
+        denoise=denoise,
+        residual_correction=residual_correction
+    )
 
 
 def normalize_mesh(mesh):

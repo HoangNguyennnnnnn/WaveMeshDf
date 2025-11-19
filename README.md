@@ -1,6 +1,6 @@
 # WaveMesh-Diff
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb) ← **NEW: Memory-optimized, no OOM errors!**
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb) ← **Ready to use!**
 
 **3D Mesh Generation using Diffusion Models in Wavelet Domain**
 
@@ -8,20 +8,15 @@ Phát sinh 3D mesh từ multi-view images sử dụng diffusion models trên spa
 
 > **🚀 Quick Start:**
 >
-> - **[Minimal Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb)** - Gọn, chạy ngay không lỗi (5-10 phút) ⭐
-> - **[Full Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)** - Đầy đủ demos, visualizations (15-20 phút)
+> - **[Minimal Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb)** - Simple demo, 5-10 phút ⭐
+> - **[Full Demo](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)** - Complete features, 15-20 phút
 >
-> **⚡ NEW: Memory Fix!** Training now works on Colab free tier (12GB RAM)
+> **📖 Documentation:** → See [DOCS.md](DOCS.md) for full index
 >
-> - Fixed `DataLoader worker killed` error
-> - Auto RAM detection + optimal settings
-> - Use `train_colab.py` for automatic optimization
->
-> **📖 Documentation:**
->
-> - [MEMORY_FIX.md](MEMORY_FIX.md) - What was fixed and how
-> - [COLAB_SETUP.md](COLAB_SETUP.md) - GPU setup & troubleshooting
-> - [NOTEBOOK_GUIDE.md](NOTEBOOK_GUIDE.md) - Which notebook to use?
+> - [QUICKSTART.md](QUICKSTART.md) - Getting started guide
+> - [COLAB_SETUP.md](COLAB_SETUP.md) - Colab GPU setup & which notebook to use
+> - [TRAINING.md](TRAINING.md) - Training guide with command examples
+> - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues & solutions
 
 ---
 

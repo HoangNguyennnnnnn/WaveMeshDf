@@ -166,13 +166,33 @@ def train_epoch(args, unet, diffusion, encoder, train_loader, optimizer, schedul
     pbar = tqdm(train_loader, desc=f"Epoch {epoch}")
     for step, batch in enumerate(pbar):
         # Get data
-        sparse_indices = batch['sparse_indices'].to(args.device)
-        sparse_features = batch['sparse_features'].to(args.device)
+        sparse_indices = batch['sparse_indices'].to(args.device)  # (N, 5): [batch, x, y, z, channel]
+        sparse_features = batch['sparse_features'].to(args.device)  # (N, 1)
+        batch_size = len(batch['category'])
         
-        # TODO: Convert sparse to dense for now (will optimize with spconv later)
-        # For now, create small dense tensor for demo
-        batch_size = batch['batch_size']
-        x = torch.randn(batch_size, 1, args.resolution, args.resolution, args.resolution).to(args.device)
+        # Convert sparse to dense tensor for training
+        # TODO: Optimize with spconv later for better performance
+        # For now, aggregate all channels into single feature map
+        x = torch.zeros(
+            batch_size, 1, 
+            args.resolution, args.resolution, args.resolution
+        ).to(args.device)
+        
+        # Fill in sparse values (aggregate multi-channel coefficients)
+        for b in range(batch_size):
+            # Get indices for this batch item
+            batch_mask = (sparse_indices[:, 0] == b)
+            if batch_mask.any():
+                indices = sparse_indices[batch_mask][:, 1:4].long()  # [x, y, z] only (drop channel)
+                features = sparse_features[batch_mask].squeeze(-1)  # (N,)
+                
+                # Clamp indices to valid range
+                max_val = args.resolution - 1
+                indices = torch.clamp(indices, 0, max_val)
+                
+                # Aggregate features at same spatial location (sum over channels)
+                for i in range(len(indices)):
+                    x[b, 0, indices[i, 0], indices[i, 1], indices[i, 2]] += features[i]
         
         # Get conditioning (if using encoder)
         context = None

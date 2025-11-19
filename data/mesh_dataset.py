@@ -407,7 +407,7 @@ def collate_sparse(batch: List[Dict]) -> Dict:
     # Concatenate
     batched = {
         'sparse_indices': torch.cat(all_indices, dim=0),  # (N_total, 5) - [batch, x, y, z, channel]
-        'sparse_features': torch.cat(all_features, dim=0),  # (N_total, 1)
+        'sparse_features': torch.cat(all_features, dim=0),  # (N_total, 1) - wavelet coefficients
         'category': torch.stack(categories),  # (B,)
         'category_name': category_names,
         'mesh_path': mesh_paths,

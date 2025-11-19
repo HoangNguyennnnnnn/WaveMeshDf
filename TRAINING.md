@@ -4,30 +4,85 @@ Complete guide for training WaveMesh-Diff models.
 
 ---
 
+## ⚡ Quick Commands
+
+### Colab (Recommended - Auto-Optimized)
+
+```bash
+# Quick test (5 min, 20 samples)
+!python train_colab.py --mode debug
+
+# Medium test (15 min, 100 samples)
+!python train_colab.py --mode quick
+
+# Full training (3 hours)
+!python train_colab.py --mode full
+```
+
+### Manual Commands
+
+**Colab Free Tier (12GB RAM):**
+
+```bash
+!python train.py \
+    --data_root data/ModelNet40 \
+    --resolution 16 \
+    --batch_size 4 \
+    --num_workers 0 \
+    --unet_channels 8 16 32 \
+    --diffusion_steps 100 \
+    --epochs 20
+```
+
+**Colab Pro (25GB RAM):**
+
+```bash
+!python train.py \
+    --data_root data/ModelNet40 \
+    --resolution 32 \
+    --batch_size 8 \
+    --num_workers 1 \
+    --unet_channels 16 32 64 \
+    --diffusion_steps 500 \
+    --epochs 50
+```
+
+**Local Machine (32GB+ RAM):**
+
+```bash
+python train.py \
+    --data_root data/ModelNet40 \
+    --resolution 32 \
+    --batch_size 16 \
+    --num_workers 4 \
+    --unet_channels 16 32 64 128 \
+    --diffusion_steps 1000 \
+    --epochs 100 \
+    --mixed_precision \
+    --use_ema
+```
+
+---
+
 ## 📋 Prerequisites
 
 1. **Install Dependencies:**
 
 ```bash
-pip install torch torchvision numpy
-pip install PyWavelets trimesh matplotlib tqdm pyyaml
-pip install transformers huggingface_hub  # Optional: DINOv2
-pip install spconv-cu118  # Optional: GPU acceleration
+pip install -r requirements.txt
 ```
 
 2. **Download Dataset:**
 
 ```bash
-# ModelNet40 (500MB - recommended for starting)
-python scripts/download_data.py --dataset modelnet40
-
-# Or ShapeNet (50GB - for production)
-# Manual download from https://shapenet.org/
+# ModelNet40 (500MB - recommended)
+!wget http://modelnet.cs.princeton.edu/ModelNet40.zip
+!unzip ModelNet40.zip -d data/
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Training Options
 
 ### Option 1: Using Config Files
 

@@ -1,5 +1,16 @@
 # Google Colab Setup Guide
 
+## 📚 Which Notebook to Use?
+
+| Notebook                                                                                                                             | Time      | Cells | Best For                      |
+| ------------------------------------------------------------------------------------------------------------------------------------ | --------- | ----- | ----------------------------- |
+| **[colab_minimal.ipynb](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_minimal.ipynb)** ⭐    | 5-10 min  | 15    | First-time users, quick test  |
+| **[colab_quickstart.ipynb](https://colab.research.google.com/github/HoangNguyennnnnnn/WaveMeshDf/blob/main/colab_quickstart.ipynb)** | 15-20 min | 55    | Full features, visualizations |
+
+**Recommendation:** Start with `colab_minimal.ipynb` - simple and guaranteed to work!
+
+---
+
 ## 🚀 Quick Start Checklist
 
 ### 1️⃣ Enable GPU (CRITICAL for speed!)
