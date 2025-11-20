@@ -371,6 +371,8 @@ class WaveMeshUNet(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.time_emb_dim = time_emb_dim
+        self.encoder_channels = encoder_channels  # Store for dense fallback
+        self.decoder_channels = decoder_channels  # Store for dense fallback
         
         # Time embedding (for diffusion timestep)
         self.time_mlp = nn.Sequential(

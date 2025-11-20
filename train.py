@@ -209,7 +209,7 @@ def train_epoch(args, unet, diffusion, encoder, train_loader, optimizer, schedul
         x_noisy = diffusion.q_sample(x, t, noise=noise)
         
         # Predict noise with U-Net
-        with torch.cuda.amp.autocast(enabled=args.mixed_precision):
+        with torch.amp.autocast('cuda', enabled=args.mixed_precision):
             noise_pred = unet(x_noisy, t, context=context)
             
             # Loss: MSE between predicted and actual noise
@@ -362,7 +362,7 @@ def main():
     scheduler = create_scheduler(args, optimizer, num_training_steps)
     
     # Mixed precision
-    scaler = torch.cuda.amp.GradScaler(enabled=args.mixed_precision)
+    scaler = torch.amp.GradScaler('cuda', enabled=args.mixed_precision)
     
     # Resume from checkpoint
     start_epoch = 0
