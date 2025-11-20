@@ -28,6 +28,10 @@
   - Fixed multi-level decomposition bugs
   - Quality improvements (MSE: 0.01 → 0.0001)
   - Usage guide & benchmarks
+- **[DENSE_FALLBACK_MODE.md](DENSE_FALLBACK_MODE.md)** - Dense fallback when spconv unavailable
+  - Auto-detection and fallback
+  - Performance comparison
+  - Installation guide
 
 ---
 

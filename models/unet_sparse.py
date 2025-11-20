@@ -6,7 +6,7 @@ Compatible with Google Colab (uses dense fallback when spconv unavailable)
 
 import torch
 import torch.nn as nn
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 import math
 
 # Use compatibility layer for spconv
@@ -426,21 +426,27 @@ class WaveMeshUNet(nn.Module):
     
     def forward(
         self,
-        x: SparseConvTensor,
+        x: Union[SparseConvTensor, torch.Tensor],
         timesteps: torch.Tensor,
         context: Optional[torch.Tensor] = None
-    ) -> SparseConvTensor:
+    ) -> Union[SparseConvTensor, torch.Tensor]:
         """
         Forward pass.
         
         Args:
-            x: Sparse tensor with noisy wavelet coefficients
+            x: Sparse tensor with noisy wavelet coefficients OR dense tensor (B, C, D, H, W)
             timesteps: (batch_size,) diffusion timesteps
             context: (batch_size, num_views, context_dim) image features (optional)
         
         Returns:
-            Sparse tensor with predicted noise/coefficients
+            Sparse tensor with predicted noise/coefficients OR dense tensor (same format as input)
         """
+        # Handle dense tensor input (fallback mode when spconv not available)
+        is_dense = isinstance(x, torch.Tensor)
+        if is_dense:
+            # Use dense fallback implementation
+            return self._forward_dense(x, timesteps, context)
+        
         batch_size = x.batch_size
         
         # Get time embeddings
@@ -464,6 +470,88 @@ class WaveMeshUNet(nn.Module):
         x = self.output_conv(x)
         
         return x
+    
+    def _forward_dense(
+        self,
+        x: torch.Tensor,
+        timesteps: torch.Tensor,
+        context: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
+        """
+        Dense fallback forward pass when spconv is not available.
+        Uses standard 3D convolutions in a simple U-Net architecture.
+        
+        Args:
+            x: Dense tensor (B, C, D, H, W)
+            timesteps: (batch_size,) diffusion timesteps
+            context: (batch_size, num_views, context_dim) image features (optional)
+        
+        Returns:
+            Dense tensor (B, C, D, H, W) with predicted noise
+        """
+        batch_size = x.shape[0]
+        spatial_shape = x.shape[2:]  # (D, H, W)
+        
+        # Get time embeddings
+        t_emb = self.get_timestep_embedding(timesteps, self.time_emb_dim)  # (batch, time_emb_dim)
+        t_emb = self.time_mlp(t_emb)  # (batch, encoder_channels[0])
+        
+        # Broadcast time embedding to spatial dimensions
+        t_emb = t_emb.view(batch_size, -1, 1, 1, 1)  # (B, C, 1, 1, 1)
+        t_emb = t_emb.expand(-1, -1, *spatial_shape)  # (B, C, D, H, W)
+        
+        # Create simple dense U-Net on the fly
+        # Note: This is less efficient but works without spconv
+        in_channels = x.shape[1]
+        
+        # Encoder
+        # Down 1: in_channels -> encoder_channels[0]
+        if not hasattr(self, 'dense_down1'):
+            self.dense_down1 = nn.Sequential(
+                nn.Conv3d(in_channels + self.encoder_channels[0], self.encoder_channels[0], 3, padding=1),
+                nn.GroupNorm(8, self.encoder_channels[0]),
+                nn.SiLU(),
+                nn.Conv3d(self.encoder_channels[0], self.encoder_channels[0], 3, padding=1),
+                nn.GroupNorm(8, self.encoder_channels[0]),
+                nn.SiLU()
+            ).to(x.device)
+        
+        # Down 2: encoder_channels[0] -> encoder_channels[1]
+        if not hasattr(self, 'dense_down2'):
+            self.dense_down2 = nn.Sequential(
+                nn.Conv3d(self.encoder_channels[0], self.encoder_channels[1], 3, stride=2, padding=1),
+                nn.GroupNorm(8, self.encoder_channels[1]),
+                nn.SiLU(),
+                nn.Conv3d(self.encoder_channels[1], self.encoder_channels[1], 3, padding=1),
+                nn.GroupNorm(8, self.encoder_channels[1]),
+                nn.SiLU()
+            ).to(x.device)
+        
+        # Up 1: encoder_channels[1] -> encoder_channels[0]
+        if not hasattr(self, 'dense_up1'):
+            self.dense_up1 = nn.Sequential(
+                nn.ConvTranspose3d(self.encoder_channels[1], self.encoder_channels[0], 2, stride=2),
+                nn.GroupNorm(8, self.encoder_channels[0]),
+                nn.SiLU()
+            ).to(x.device)
+        
+        # Output: encoder_channels[0] * 2 (skip) -> in_channels
+        if not hasattr(self, 'dense_out'):
+            self.dense_out = nn.Conv3d(self.encoder_channels[0] * 2, in_channels, 3, padding=1).to(x.device)
+        
+        # Forward pass
+        x_in = torch.cat([x, t_emb], dim=1)
+        
+        # Encoder
+        h1 = self.dense_down1(x_in)  # Same spatial size
+        h2 = self.dense_down2(h1)    # Halved spatial size
+        
+        # Decoder with skip connections
+        h_up = self.dense_up1(h2)    # Back to original spatial size
+        h_cat = torch.cat([h_up, h1], dim=1)  # Skip connection
+        out = self.dense_out(h_cat)
+        
+        return out
 
 
 def create_sparse_tensor_from_wavelet(
